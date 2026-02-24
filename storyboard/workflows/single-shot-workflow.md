@@ -134,7 +134,7 @@ FOR i, image IN enumerate(images, start=1):
 ```
 - Step 1 的分析结果
 - 用户描述
-- 知识库 (knowledge-base.md)
+- 系统提示词知识包（`../system-prompts/knowledge-base.md`）
 ```
 
 ### 处理逻辑
@@ -372,3 +372,11 @@ Environment & Mood: Wet pavement reflects vibrant neon signs in pink and blue. H
 ---
 ✅ 验证通过: 5/5 项检查全部通过
 ```
+
+---
+
+## 系统提示词依赖（非 resources）
+
+- `../system-prompts/knowledge-base.md`
+- `../system-prompts/platform-prompts.md`
+- `../system-prompts/validation-rules.md`
