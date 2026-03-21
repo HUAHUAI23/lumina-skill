@@ -1,177 +1,177 @@
-# 运镜知识库 (Camera Movement Knowledge Base)
+# 运镜知识库
 
-本知识库包含专业运镜术语、AI 视频提示词关键词和场景匹配矩阵。
-
----
-
-## 一、基础运镜动作 (Core Camera Movements)
-
-### 1.1 平面运动类 (Planar)
-
-| 英文术语  | 中文名称  | 动作描述                 | 视觉效果                   | 情感表达             | AI 关键词                                                  |
-| --------- | --------- | ------------------------ | -------------------------- | -------------------- | ---------------------------------------------------------- |
-| **Pan**   | 横摇      | 摄像机固定位置，水平旋转 | 展现横向空间、跟随水平移动 | 探索、观察、平静叙述 | `panning`, `horizontal pan`, `pan left/right`              |
-| **Tilt**  | 纵摇      | 摄像机固定位置，垂直旋转 | 展现纵向空间、揭示高度     | 敬畏、压迫、期待     | `tilting`, `tilt up/down`, `vertical tilt`                 |
-| **Truck** | 平移/横移 | 摄像机水平平行移动       | 平滑跟随、空间穿越感       | 陪伴、流畅、客观     | `truck left/right`, `lateral tracking`, `crab shot`        |
-| **Dolly** | 推拉      | 摄像机物理前后移动       | 接近或远离主体             | 亲密/疏离、聚焦/释放 | `dolly in/out`, `push in`, `pull back`, `dollying forward` |
-
-### 1.2 垂直运动类 (Vertical)
-
-| 英文术语       | 中文名称 | 动作描述                       | 视觉效果                | 情感表达           | AI 关键词                                          |
-| -------------- | -------- | ------------------------------ | ----------------------- | ------------------ | -------------------------------------------------- |
-| **Crane**      | 升降     | 摄像机垂直升降移动             | 俯瞰/仰视转换、空间层次 | 宏大、解放、超越   | `crane up/down`, `jib shot`, `boom shot`           |
-| **Pedestal**   | 底座升降 | 摄像机沿垂直轴升降（机位不变） | 改变视角高度            | 权力转换、视角变化 | `pedestal up/down`, `vertical lift`                |
-| **Drone Rise** | 无人机升 | 从低到高垂直上升               | 揭示全景、宏大感        | 自由、希望、震撼   | `drone rising`, `aerial ascent`, `ascending drone` |
-
-### 1.3 旋转运动类 (Rotational)
-
-| 英文术语  | 中文名称 | 动作描述             | 视觉效果             | 情感表达           | AI 关键词                                             |
-| --------- | -------- | -------------------- | -------------------- | ------------------ | ----------------------------------------------------- |
-| **Arc**   | 弧形运动 | 摄像机绕主体弧形移动 | 立体展示、动态观察   | 审视、欣赏、环绕   | `arc shot`, `curved tracking`, `sweeping arc`         |
-| **Orbit** | 环绕     | 360 度绕主体旋转     | 全方位展示、时空凝固 | 聚焦、强调、仪式感 | `orbit`, `360 rotation`, `circling shot`, `revolving` |
-| **Roll**  | 翻滚     | 摄像机沿镜头轴旋转   | 画面倾斜、失衡感     | 混乱、眩晕、梦幻   | `camera roll`, `barrel roll`, `rotating frame`        |
-
-### 1.4 光学运动类 (Optical)
-
-| 英文术语       | 中文名称 | 动作描述     | 视觉效果           | 情感表达         | AI 关键词                                      |
-| -------------- | -------- | ------------ | ------------------ | ---------------- | ---------------------------------------------- |
-| **Zoom In**    | 推镜头   | 改变焦距拉近 | 快速聚焦、压缩空间 | 紧张、强调、发现 | `zoom in`, `optical zoom in`, `zooming closer` |
-| **Zoom Out**   | 拉镜头   | 改变焦距拉远 | 揭示环境、扩展空间 | 释放、孤独、宏观 | `zoom out`, `zooming out`, `widening shot`     |
-| **Rack Focus** | 焦点转移 | 改变对焦点   | 引导视线、层次切换 | 发现、转折、暗示 | `rack focus`, `focus pull`, `shifting focus`   |
+本知识库用于 `storyboard` 的系统预加载。默认以中文术语解释镜头语言，英文只作为平台增强词参考，不作为默认输出格式。
 
 ---
 
-## 二、复合运镜技法 (Compound Techniques)
+## 一、基础运镜动作
 
-| 英文术语          | 中文名称          | 组合方式              | 视觉效果                | 经典应用             | AI 关键词                                                   |
-| ----------------- | ----------------- | --------------------- | ----------------------- | -------------------- | ----------------------------------------------------------- |
-| **Dolly Zoom**    | 滑动变焦/眩晕效果 | 推拉 + 反向变焦       | 背景压缩/扩张，主体不变 | 恐惧、顿悟、心理冲击 | `dolly zoom`, `vertigo effect`, `zolly`                     |
-| **Tracking Shot** | 跟拍镜头          | 平移 + 跟随主体       | 持续跟随、沉浸感        | 行走对话、追逐、探索 | `tracking shot`, `following shot`, `chase cam`              |
-| **Steadicam**     | 斯坦尼康          | 稳定器 + 自由移动     | 流畅跟随、穿越空间      | 长镜头、一镜到底     | `steadicam`, `smooth tracking`, `gliding shot`              |
-| **Whip Pan**      | 甩镜头            | 极快横摇              | 快速转场、时空跳跃      | 转场、平行叙事、喜剧 | `whip pan`, `swish pan`, `flash pan`                        |
-| **Bullet Time**   | 子弹时间          | 多机位环绕 + 时间冻结 | 时间静止、360 度观察    | 动作高潮、关键瞬间   | `bullet time`, `time freeze 360`, `matrix effect`           |
-| **FPV / POV**     | 主观视角          | 第一人称视角          | 代入感、临场感          | 游戏、恐怖、沉浸体验 | `FPV`, `POV shot`, `first person view`, `subjective camera` |
-| **Dutch Angle**   | 荷兰角/倾斜构图   | 摄像机倾斜            | 不安、失衡、异常        | 惊悚、心理、反派     | `dutch angle`, `tilted frame`, `canted angle`               |
-| **Handheld**      | 手持拍摄          | 手持摄像机            | 真实感、紧迫感          | 纪录片、战争、追逐   | `handheld`, `shaky cam`, `documentary style`                |
+### 1. 平面运动
 
----
+| 中文名称 | 英文增强词 | 动作描述 | 视觉效果 | 常见情绪 | 英文增强关键词 |
+| --- | --- | --- | --- | --- | --- |
+| 横摇 | Pan | 机位固定，镜头水平转动 | 展现横向空间、跟随视线 | 探索、观察、平静 | `panning`, `horizontal pan`, `pan left/right` |
+| 纵摇 | Tilt | 机位固定，镜头垂直转动 | 展现高度、揭示上下关系 | 敬畏、压迫、期待 | `tilting`, `tilt up/down`, `vertical tilt` |
+| 平移/横移 | Truck | 摄像机水平平行移动 | 陪伴主体、穿越空间 | 流畅、客观、跟随 | `truck left/right`, `lateral tracking`, `crab shot` |
+| 推拉 | Dolly | 摄像机物理前后移动 | 接近或远离主体 | 亲密、疏离、聚焦、释放 | `dolly in/out`, `push in`, `pull back` |
 
-## 三、镜头类型 (Shot Types)
+### 2. 垂直运动
 
-### 3.1 按距离分类
+| 中文名称 | 英文增强词 | 动作描述 | 视觉效果 | 常见情绪 | 英文增强关键词 |
+| --- | --- | --- | --- | --- | --- |
+| 升降 | Crane | 摄像机垂直升降移动 | 转换俯仰关系，拉开空间层次 | 宏大、解放、超越 | `crane up/down`, `jib shot`, `boom shot` |
+| 底座升降 | Pedestal | 机位不变，仅沿垂直轴升降 | 调整视高 | 权力变化、视角转移 | `pedestal up/down`, `vertical lift` |
+| 无人机上升 | Drone Rise | 从低位升到高位 | 揭示大场面与全景 | 自由、希望、震撼 | `drone rising`, `aerial ascent` |
 
-| 英文术语                    | 中文名称  | 画面内容           | 使用场景        | AI 关键词                                |
-| --------------------------- | --------- | ------------------ | --------------- | ---------------------------------------- |
-| **Extreme Long Shot (ELS)** | 大远景    | 人物极小，环境为主 | 开场、史诗场面  | `extreme long shot`, `establishing wide` |
-| **Long Shot (LS)**          | 远景/全景 | 人物全身 + 环境    | 建立场景、动作  | `long shot`, `wide shot`, `full shot`    |
-| **Medium Long Shot (MLS)**  | 中远景    | 膝盖以上           | 走动、多人互动  | `medium long shot`, `american shot`      |
-| **Medium Shot (MS)**        | 中景      | 腰部以上           | 对话、日常叙事  | `medium shot`, `mid shot`, `waist shot`  |
-| **Medium Close-Up (MCU)**   | 中近景    | 胸部以上           | 表情 + 肢体语言 | `medium close-up`, `bust shot`           |
-| **Close-Up (CU)**           | 近景/特写 | 面部或物体细节     | 情感、重要细节  | `close-up`, `tight shot`                 |
-| **Extreme Close-Up (ECU)**  | 大特写    | 眼睛、嘴唇等局部   | 强烈情感、悬疑  | `extreme close-up`, `macro shot`         |
+### 3. 旋转运动
 
-### 3.2 按角度分类
+| 中文名称 | 英文增强词 | 动作描述 | 视觉效果 | 常见情绪 | 英文增强关键词 |
+| --- | --- | --- | --- | --- | --- |
+| 弧形运动 | Arc | 绕主体做弧线移动 | 立体展示主体 | 欣赏、审视、环绕 | `arc shot`, `curved tracking`, `sweeping arc` |
+| 环绕 | Orbit | 360 度绕主体旋转 | 全方位展示、强调仪式感 | 聚焦、强调、凝视 | `orbit`, `360 rotation`, `circling shot` |
+| 翻滚 | Roll | 镜头沿光轴旋转 | 画面失衡 | 混乱、眩晕、梦幻 | `camera roll`, `barrel roll`, `rotating frame` |
 
-| 英文术语                    | 中文名称    | 效果               | AI 关键词                                 |
-| --------------------------- | ----------- | ------------------ | ----------------------------------------- |
-| **Eye Level**               | 平视        | 自然、中立         | `eye level`, `neutral angle`              |
-| **Low Angle**               | 仰拍/低角度 | 主体显得强大、威严 | `low angle`, `worm's eye view`            |
-| **High Angle**              | 俯拍/高角度 | 主体显得渺小、脆弱 | `high angle`, `looking down`              |
-| **Bird's Eye View**         | 鸟瞰        | 正上方俯视         | `bird's eye view`, `top-down`, `overhead` |
-| **Over-the-Shoulder (OTS)** | 过肩镜头    | 对话、互动         | `over the shoulder`, `OTS shot`           |
+### 4. 光学运动
+
+| 中文名称 | 英文增强词 | 动作描述 | 视觉效果 | 常见情绪 | 英文增强关键词 |
+| --- | --- | --- | --- | --- | --- |
+| 推镜头 | Zoom In | 改变焦距拉近 | 快速聚焦、压缩空间 | 紧张、强调、发现 | `zoom in`, `optical zoom in` |
+| 拉镜头 | Zoom Out | 改变焦距拉远 | 揭示环境、扩展空间 | 释放、孤独、宏观 | `zoom out`, `zooming out` |
+| 焦点转移 | Rack Focus | 对焦点从前景移到后景或反之 | 引导观众视线 | 发现、转折、暗示 | `rack focus`, `focus pull` |
 
 ---
 
-## 四、风格修饰词 (Style Modifiers)
+## 二、复合运镜技法
 
-### 4.1 速度维度 (Speed)
-
-| 修饰词 | 英文       | 描述           | 适用场景           | AI 关键词组合                            |
-| ------ | ---------- | -------------- | ------------------ | ---------------------------------------- |
-| 极慢   | Ultra Slow | 几乎静止的移动 | 冥想、悲伤、仪式   | `ultra slow dolly`, `glacial pan`        |
-| 缓慢   | Slow       | 从容、沉稳     | 情感戏、回忆、浪漫 | `slow dolly in`, `gentle tracking`       |
-| 柔和   | Gentle     | 平滑、不突兀   | 爱情、自然、产品   | `gentle arc`, `smooth orbit`             |
-| 平稳   | Steady     | 匀速、专业感   | 广告、时尚、建筑   | `steady tracking`, `fluid motion`        |
-| 动感   | Dynamic    | 富有变化和节奏 | MV、广告、运动     | `dynamic tracking`, `energetic movement` |
-| 急速   | Fast       | 高速移动       | 追逐、动作、紧张   | `fast dolly`, `rapid pan`                |
-| 迅猛   | Rapid      | 极快、冲击力强 | 爆炸、冲突、高潮   | `rapid zoom`, `aggressive push`          |
-
-### 4.2 力度维度 (Intensity)
-
-| 修饰词 | 英文       | 描述             | 适用场景               |
-| ------ | ---------- | ---------------- | ---------------------- |
-| 微妙   | Subtle     | 几乎不可察觉     | 心理戏、对话、氛围营造 |
-| 稳定   | Steady     | 坚定有力但不夸张 | 纪录片、采访、叙事     |
-| 激进   | Aggressive | 强烈、有冲击力   | 战斗、冲突、极限运动   |
-| 突然   | Sudden     | 突发变化         | 惊悚、悬疑、反转       |
-| 流畅   | Smooth     | 无顿挫感         | 商业广告、产品展示     |
+| 中文名称 | 英文增强词 | 组合方式 | 视觉效果 | 适用场景 | 英文增强关键词 |
+| --- | --- | --- | --- | --- | --- |
+| 滑动变焦/眩晕效果 | Dolly Zoom | 推拉配合反向变焦 | 背景压缩或扩张，主体相对稳定 | 恐惧、顿悟、心理冲击 | `dolly zoom`, `vertigo effect`, `zolly` |
+| 跟拍镜头 | Tracking Shot | 平移并持续跟随主体 | 沉浸式跟随 | 行走、追逐、探索 | `tracking shot`, `following shot`, `chase cam` |
+| 稳定器跟拍 | Steadicam | 稳定器辅助自由移动 | 平稳穿越空间 | 长镜头、一镜到底 | `steadicam`, `smooth tracking`, `gliding shot` |
+| 甩镜头 | Whip Pan | 极快横摇形成模糊 | 快速转场与时空跳变 | 喜剧、平行叙事、节奏切换 | `whip pan`, `swish pan`, `flash pan` |
+| 子弹时间 | Bullet Time | 多机位环绕 + 时间冻结 | 时间静止与空间展开 | 动作高潮、关键瞬间 | `bullet time`, `time freeze 360` |
+| 主观视角 | FPV / POV | 第一人称视角 | 强代入感 | 游戏、恐怖、沉浸体验 | `FPV`, `POV shot`, `first person view` |
+| 荷兰角/倾斜构图 | Dutch Angle | 机位倾斜 | 不安、异常、失衡 | 惊悚、反派、心理失序 | `dutch angle`, `tilted frame`, `canted angle` |
+| 手持感 | Handheld | 手持拍摄 | 真实、紧迫 | 纪录片、追逐、战争 | `handheld`, `shaky cam`, `documentary style` |
 
 ---
 
-## 五、场景-运镜匹配矩阵 (Matching Matrix)
+## 三、镜头类型
 
-### 5.1 按主体类型推荐
+### 1. 按距离分类
 
-| 主体类型          | 推荐运镜                       | 推荐风格                  | 避免使用         |
-| ----------------- | ------------------------------ | ------------------------- | ---------------- |
-| **人物面部/情感** | Dolly In, Push In, Rack Focus  | Slow, Gentle, Subtle      | Fast, Aggressive |
-| **人物全身/动作** | Tracking, Arc, Truck           | Dynamic, Smooth           | Static           |
-| **风景/自然**     | Pan, Tilt, Drone Reveal, Crane | Slow, Ethereal, Majestic  | Handheld, Shaky  |
-| **动作/运动**     | Tracking, Whip Pan, FPV        | Fast, Aggressive, Dynamic | Slow, Static     |
-| **产品/物品**     | Orbit, Arc, Dolly              | Smooth, Steady, Elegant   | Handheld         |
-| **建筑/空间**     | Crane, Drone, Wide Pan         | Slow, Majestic            | Close-up         |
-| **对话场景**      | OTS, Dolly In, Rack Focus      | Steady, Subtle            | Whip Pan         |
+| 中文名称 | 英文增强词 | 画面内容 | 使用场景 | 英文增强关键词 |
+| --- | --- | --- | --- | --- |
+| 大远景 | Extreme Long Shot / ELS | 人物很小，环境为主 | 开场、史诗场面 | `extreme long shot`, `establishing wide` |
+| 远景/全景 | Long Shot / LS | 人物全身加环境 | 建立场景、动作展示 | `long shot`, `wide shot`, `full shot` |
+| 中远景 | Medium Long Shot / MLS | 膝盖以上 | 走动、多人互动 | `medium long shot`, `american shot` |
+| 中景 | Medium Shot / MS | 腰部以上 | 对话、日常叙事 | `medium shot`, `mid shot`, `waist shot` |
+| 中近景 | Medium Close-Up / MCU | 胸部以上 | 表情与肢体语言 | `medium close-up`, `bust shot` |
+| 近景/特写 | Close-Up / CU | 面部或物体细节 | 情感节点、重要信息 | `close-up`, `tight shot` |
+| 大特写 | Extreme Close-Up / ECU | 眼睛、嘴唇等局部 | 强情绪、悬疑、顿悟 | `extreme close-up`, `macro shot` |
 
-### 5.2 按情感氛围推荐
+### 2. 按角度分类
 
-| 情感氛围        | 推荐运镜                                 | 推荐风格               | 避免使用            |
-| --------------- | ---------------------------------------- | ---------------------- | ------------------- |
-| **浪漫/温馨**   | Dolly, Arc, Gentle Pan                   | Slow, Soft, Dreamy     | Aggressive, Shaky   |
-| **紧张/悬疑**   | Push In, Dutch Angle, Handheld           | Slow, Sudden           | Smooth, Relaxed     |
-| **震撼/史诗**   | Crane, Drone, Dolly Zoom                 | Majestic, Grand        | Subtle, Small       |
-| **欢快/活力**   | Whip Pan, Tracking, Dynamic Arc          | Fast, Energetic        | Slow, Static        |
-| **悲伤/沉重**   | Slow Dolly, Static, Gentle Tilt          | Ultra Slow, Heavy      | Fast, Dynamic       |
-| **恐怖/不安**   | Dutch Angle, Shaky Handheld, Sudden Zoom | Aggressive, Jarring    | Smooth, Steady      |
-| **梦幻/超现实** | Slow Orbit, Roll, Ethereal Crane         | Otherworldly, Floating | Realistic, Grounded |
+| 中文名称 | 英文增强词 | 效果 | 英文增强关键词 |
+| --- | --- | --- | --- |
+| 平视 | Eye Level | 自然、中立 | `eye level`, `neutral angle` |
+| 仰拍/低角度 | Low Angle | 主体显得强大 | `low angle`, `worm's eye view` |
+| 俯拍/高角度 | High Angle | 主体显得脆弱或渺小 | `high angle`, `looking down` |
+| 鸟瞰 | Bird's Eye View | 正上方俯视 | `bird's eye view`, `top-down`, `overhead` |
+| 过肩镜头 | Over-the-Shoulder / OTS | 对话与互动 | `over the shoulder`, `OTS shot` |
 
 ---
 
-## 六、视觉约束规则 (Visual Constraints)
+## 四、速度与力度修饰词
 
-### 图生视频场景特别注意
+### 1. 速度维度
 
-| 图片特征          | 约束规则                          | 原因              |
-| ----------------- | --------------------------------- | ----------------- |
-| **极近景/大特写** | 禁止 Fast Dolly In, Rapid Push In | 防止面部畸变      |
-| **主体占满边缘**  | 慎用 Wide Pan, Fast Tilt          | 防止背景幻觉/穿帮 |
-| **2D 插画/平面**  | 避免复杂 3D Orbit, Arc            | 破坏平面艺术感    |
-| **低分辨率图片**  | 避免 Zoom In, Close-up            | 放大后画质下降    |
-| **多人合照**      | 使用 Image 编号区分               | 避免角色混淆      |
+| 中文修饰词 | 英文增强词 | 描述 | 适用场景 | 英文增强关键词 |
+| --- | --- | --- | --- | --- |
+| 极慢 | Ultra Slow | 几乎静止的移动 | 仪式、悲伤、冥想 | `ultra slow dolly`, `glacial pan` |
+| 缓慢 | Slow | 从容、沉稳 | 情感戏、回忆、浪漫 | `slow dolly in`, `gentle tracking` |
+| 柔和 | Gentle | 平滑、不突兀 | 爱情、自然、产品 | `gentle arc`, `smooth orbit` |
+| 平稳 | Steady | 匀速、专业感 | 广告、时尚、建筑 | `steady tracking`, `fluid motion` |
+| 动感 | Dynamic | 富有节奏与变化 | MV、广告、运动 | `dynamic tracking`, `energetic movement` |
+| 急速 | Fast | 高速移动 | 追逐、动作、紧张 | `fast dolly`, `rapid pan` |
+| 迅猛 | Rapid | 极快、冲击力强 | 爆发、冲突、高潮 | `rapid zoom`, `aggressive push` |
+
+### 2. 力度维度
+
+| 中文修饰词 | 英文增强词 | 描述 | 适用场景 |
+| --- | --- | --- | --- |
+| 微妙 | Subtle | 几乎不可察觉 | 心理戏、对话、氛围营造 |
+| 稳定 | Steady | 有力但不夸张 | 纪录片、采访、叙事 |
+| 激进 | Aggressive | 强烈、有冲击力 | 战斗、冲突、极限运动 |
+| 突然 | Sudden | 突发变化 | 惊悚、悬疑、反转 |
+| 流畅 | Smooth | 无顿挫感 | 商业广告、产品展示 |
 
 ---
 
-## 七、提示词结构参考
+## 五、场景与运镜匹配参考
 
-### 标准 4 段式结构
+### 1. 按主体类型推荐
 
-```
-[电影感标签], [运镜方式], [场景类型], [对话特征].
+| 主体类型 | 推荐运镜 | 推荐风格 | 避免使用 |
+| --- | --- | --- | --- |
+| 人物面部/情感 | 推近、推进、焦点转移 | 缓慢、柔和、微妙 | 急速、激进 |
+| 人物全身/动作 | 跟拍、弧形、平移 | 动感、流畅 | 长时间静止 |
+| 风景/自然 | 横摇、纵摇、无人机上升、升降 | 缓慢、宏大 | 手持感、抖动 |
+| 动作/运动 | 跟拍、甩镜、主观视角 | 急速、激进、动感 | 过慢、过静 |
+| 产品/物品 | 环绕、弧形、推拉 | 流畅、平稳、精致 | 手持感 |
+| 建筑/空间 | 升降、无人机上升、宽幅横摇 | 缓慢、宏大 | 过近特写 |
+| 对话场景 | 过肩镜头、推进、焦点转移 | 平稳、微妙 | 甩镜头 |
 
-Camera Movement: [镜头运动描述，使用 Image N 标记主体].
+### 2. 按情绪氛围推荐
 
-Subject & Action: Image N [动作描述], [原语言台词]. Image M [动作描述].
+| 情绪氛围 | 推荐运镜 | 推荐风格 | 避免使用 |
+| --- | --- | --- | --- |
+| 浪漫/温馨 | 推拉、弧形、柔和横摇 | 缓慢、柔和、梦幻 | 激进、抖动 |
+| 紧张/悬疑 | 推进、荷兰角、手持感 | 缓慢、突然 | 平滑过头、松弛 |
+| 震撼/史诗 | 升降、无人机、滑动变焦 | 宏大、庄重 | 过于细小、过于保守 |
+| 欢快/活力 | 甩镜、跟拍、动感弧形 | 急速、活跃 | 过慢、僵硬 |
+| 悲伤/沉重 | 缓慢推拉、静止、柔和纵摇 | 极慢、压抑 | 急速、强烈 |
+| 恐怖/不安 | 荷兰角、抖动手持、突然推近 | 激进、突发 | 过于平稳 |
+| 梦幻/超现实 | 缓慢环绕、翻滚、漂浮式升降 | 超现实、漂浮感 | 过于写实、过于落地 |
 
-Environment & Mood: [环境、光影、色调、氛围描述].
+---
+
+## 六、视觉约束规则
+
+| 图片特征 | 约束规则 | 原因 |
+| --- | --- | --- |
+| 极近景/大特写 | 禁止快速推进与迅猛推近 | 防止面部畸变 |
+| 主体占满边缘 | 慎用大幅横摇和快速纵摇 | 防止背景幻觉与穿帮 |
+| 2D 插画/平面图 | 避免复杂三维环绕 | 防止破坏平面艺术感 |
+| 低分辨率图片 | 避免过度拉近和大特写 | 防止画质崩坏 |
+| 多人合照 | 使用 `图片1 / 图片2` 明确指代 | 防止角色混淆 |
+
+---
+
+## 七、中文导演骨架
+
+```text
+镜头目的：这一镜头要让观众看到什么、感受到什么。
+
+镜头运动：描述机位与运动方向；如使用素材，写清对应的 `图片1 / 视频1`。
+
+主体动作：主体在这一镜头里的具体动作、表情、节奏与原语言台词。
+
+场景与光影：环境变化、光线、色彩、氛围、空气感。
+
+强约束：必须保留什么、禁止出现什么、连续性要求是什么。
 ```
 
-### 示例
+### 中文示例
 
-```
-Cyberpunk thriller, tracking shot, neon-lit rainy street, urgent dialogue.
+```text
+镜头目的：表现雨夜追逐中的压迫感与求生本能。
 
-Camera Movement: Camera rapidly tracks alongside Image 1 as they sprint through the rain-soaked street, handheld style capturing the chaos.
+镜头运动：镜头沿着图片1右侧低位跟拍，保持中近景，速度逐步加快，带轻微手持感。
 
-Subject & Action: Image 1 runs desperately through puddles, shouting "快跑!" in panic. Image 2 pursues from behind, expression intense.
+主体动作：图片1踩过积水快速奔跑，回头大喊“快跑！”，呼吸急促，肩颈紧绷；图片2从后方逼近，但不遮挡主体。
 
-Environment & Mood: Wet pavement reflects vibrant neon signs in pink and blue. Heavy rain, steam rising from street vents. Dark, moody atmosphere with high contrast lighting.
+场景与光影：街面霓虹反射被脚步踩碎，湿冷空气中有薄雾，蓝粉对比光增强紧迫感。
+
+强约束：保持图片1与图片2外观一致；不新增路人、车辆或机器人；不出现字幕、水印、编号和 HUD。
 ```

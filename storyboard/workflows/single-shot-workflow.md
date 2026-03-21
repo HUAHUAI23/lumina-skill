@@ -1,382 +1,167 @@
-# 单镜头工作流程 (模式 A)
+# 单镜头工作流程（模式 A）
 
-本工作流用于生成单个视频片段的专业运镜提示词。
+本工作流用于生成单个镜头的视频提示词。默认中文输出，英文仅作平台增强版。
 
 ---
 
 ## 触发条件
 
-- 图片数量 ≤ 2
+- 图片数量不超过 2
 - 用户描述单一场景
-- 关键词: 这张图、这个画面、单个镜头
+- 关键词：这张图、这个画面、一个镜头、单镜头
 
 ---
 
 ## 工作流程概览
 
-```
+```text
 用户输入（文本 + 图片 + 台词）
-         ↓
-┌─────────────────────────────────────┐
-│  Step 1: 分析与约束判断              │
-└─────────────────────────────────────┘
-         ↓
-┌─────────────────────────────────────┐
-│  Step 2: 运镜推荐生成               │
-└─────────────────────────────────────┘
-         ↓
-    用户选择（或使用推荐的首选）
-         ↓
-┌─────────────────────────────────────┐
-│  Step 3: 提示词生成 + 验证          │
-└─────────────────────────────────────┘
-         ↓
-    输出: 单段视频提示词
+  -> 分析与约束判断
+  -> 运镜候选推荐
+  -> 中文主提示词生成
+  -> 严格验证
+  -> 输出
 ```
 
 ---
 
-## Step 1: 分析与约束判断
+## Step 1｜分析与约束判断
 
 ### 输入
-```
-- 用户描述文本
-- 参考图片 (0-2 张)
-- 台词/对话 (可选)
-```
-
-### 处理逻辑
-
-#### 1.1 意图识别
-
-```
-IF 用户明确指定运镜类型:
-   - 关键词: 推进、拉远、环绕、横摇、dolly、pan、orbit
-   → intent_type = "explicit"
-   → 锁定该运镜，优化修饰语
-   
-ELSE:
-   → intent_type = "implicit"
-   → 从知识库推荐 3-4 种方案
-```
-
-#### 1.2 语言检测
-
-```
-检测优先级: 台词语言 > 描述语言
-
-IF 包含中文字符:
-   → language_code = "ZH_CN"
-ELIF 包含日文字符:
-   → language_code = "JA"
-ELSE:
-   → language_code = "EN"
-
-重要: language_code 决定台词输出语言
-```
-
-#### 1.3 视觉约束评估 (图生视频)
-
-```
-分析图片特征，确定约束:
-
-IF 极近景/大特写:
-   → blocked: ["Fast Dolly In", "Rapid Push In"]
-   → warning: "⚠️ 避免面部畸变"
-
-IF 主体占满边缘:
-   → blocked: ["Wide Pan", "Fast Tilt"]
-   → warning: "⚠️ 防止背景幻觉"
-
-IF 2D 插画/平面:
-   → blocked: ["Complex Orbit", "3D Arc"]
-   → warning: "⚠️ 保持平面艺术感"
-```
-
-#### 1.4 图片编号映射
-
-```
-FOR i, image IN enumerate(images, start=1):
-   mapping[f"img_{i:03d}"] = f"Image {i}"
-
-示例输出:
-{
-  "img_001": "Image 1",
-  "img_002": "Image 2"
-}
-```
-
-### 输出
-
-```json
-{
-  "intent_type": "implicit",
-  "language_code": "ZH_CN",
-  "visual_constraints": {
-    "allowed": ["Tracking Shot", "Dolly In"],
-    "blocked": ["Fast Push In"],
-    "warnings": ["⚠️ 动作场景建议动态运镜"]
-  },
-  "image_mapping": {
-    "img_001": "Image 1"
-  },
-  "detected_dialogues": [
-    {"speaker": "角色A", "text": "快跑！"}
-  ]
-}
-```
-
----
-
-## Step 2: 运镜推荐生成
-
-### 输入
-```
-- Step 1 的分析结果
 - 用户描述
-- 系统提示词知识包（`../system-prompts/knowledge-base.md`）
-```
+- 参考图片（0-2 张）
+- 台词（可选）
 
-### 处理逻辑
+### 分析维度
+1. 是否明确指定运镜
+2. 画面主体是什么
+3. 当前镜头的戏剧任务是什么
+4. 是否存在视觉约束
+5. 是否存在必须保留的台词语言
 
-#### 2.1 推荐策略
+### 视觉约束示例
+- 极近景：避免快速推进
+- 主体贴边：避免大幅横摇
+- 2D 插画：避免复杂三维环绕
+- 低分辨率：避免极端放大
 
-```
-IF intent_type == "explicit":
-   # 用户已指定运镜，生成 1-2 个优化变体
-   → 优化速度修饰词
-   → 添加风格建议
-   
-ELSE (implicit):
-   # 从知识库匹配 3-4 种不同维度方案
-   → 按主体类型匹配
-   → 按情感氛围匹配
-   → 应用视觉约束过滤
-   → 按适配度排序
-```
+### 素材映射
+- 图片统一映射为 `图片1`、`图片2`
+- 视频统一映射为 `视频1`
+- 音频统一映射为 `音频1`
 
-#### 2.2 匹配逻辑
-
-```
-# 提取场景特征
-scene_features = {
-  "subject_type": "人物全身/动作",
-  "mood": "紧张",
-  "environment": "街道",
-  "action": "奔跑"
-}
-
-# 从匹配矩阵获取候选
-candidates = get_from_matrix(scene_features)
-
-# 过滤受约束的运镜
-candidates = filter_blocked(candidates, visual_constraints)
-
-# 计算适配度
-FOR candidate IN candidates:
-   candidate.suitability = calculate_score(candidate, scene_features)
-
-# 排序返回前 3-4 个
-return sorted(candidates)[:4]
-```
-
-### 输出
-
+### 输出格式
 ```json
 {
-  "analysis_summary": "场景为赛博朋克追逐，推荐动态跟随运镜增强临场感",
-  "recommended_modes": [
-    {
-      "category": "复合运镜",
-      "en_term": "Tracking Shot",
-      "cn_label": "跟拍镜头",
-      "suitability": "High",
-      "reason": "最适合表现奔跑动作，持续跟随主体"
-    },
-    {
-      "category": "复合运镜",
-      "en_term": "FPV",
-      "cn_label": "主观视角",
-      "suitability": "High",
-      "reason": "第一人称视角强化代入感"
-    },
-    {
-      "category": "基础运镜",
-      "en_term": "Fast Truck",
-      "cn_label": "快速平移",
-      "suitability": "Medium",
-      "reason": "横向展现环境，速度感强"
-    }
-  ]
-}
-```
-
----
-
-## Step 3: 提示词生成 + 验证
-
-### 输入
-```
-- 用户选择的运镜 (或使用首选)
-- 分析结果 (language_code, image_mapping)
-- 用户描述和台词
-```
-
-### 处理逻辑
-
-#### 3.1 构建 4 段式结构
-
-```
-# 1. Header (电影感标签)
-header = build_header(
-  movement=selected_movement,
-  scene_type=detect_scene_type(description),
-  has_dialogue=bool(dialogues)
-)
-# 示例: "Cyberpunk thriller, tracking shot, neon-lit street, urgent dialogue."
-
-# 2. Camera Movement
-camera = build_camera_movement(
-  movement=selected_movement,
-  speed=speed_modifier,
-  image_mapping=image_mapping,
-  description=description
-)
-# 示例: "Camera rapidly tracks alongside Image 1 as they sprint through the rain."
-
-# 3. Subject & Action (关键: 保留原语言台词!)
-subject = build_subject_action(
-  dialogues=dialogues,
-  image_mapping=image_mapping,
-  language_code=language_code,
-  description=description
-)
-# 示例: "Image 1 runs desperately, shouting "快跑!" in panic."
-
-# 4. Environment & Mood
-environment = build_environment(
-  description=description,
-  movement=selected_movement
-)
-# 示例: "Wet pavement reflects neon signs. Heavy rain. Dark, moody atmosphere."
-```
-
-#### 3.2 组装提示词
-
-```
-final_prompt = f"""{header}
-
-Camera Movement: {camera}
-
-Subject & Action: {subject}
-
-Environment & Mood: {environment}"""
-```
-
-#### 3.3 严格验证
-
-```
-validation_checks = []
-
-# 检查 1: Image 编号
-IF "Subject" in prompt OR "Character" in prompt:
-   checks["image_numbering"] = "FAIL"
-ELSE:
-   checks["image_numbering"] = "PASS"
-
-# 检查 2: 台词语言
-FOR dialogue IN original_dialogues:
-   IF dialogue.text NOT IN prompt:
-      checks["dialogue_language"] = "FAIL"
-
-# 检查 3: 无创意补充
-user_elements = extract_elements(description)
-prompt_elements = extract_elements(prompt)
-IF has_new_elements(prompt_elements - user_elements):
-   checks["no_creative_supplement"] = "FAIL"
-
-# 检查 4: 结构
-required = ["Camera Movement:", "Subject & Action:", "Environment"]
-IF NOT all(r in prompt for r in required):
-   checks["structure"] = "FAIL"
-
-# 检查 5: 长度
-IF NOT (5 <= line_count <= 8):
-   checks["line_count"] = "FAIL"
-
-passed = all(v == "PASS" for v in checks.values())
-```
-
-### 输出
-
-```json
-{
-  "final_prompt": "Cyberpunk thriller, tracking shot, neon-lit rainy street, urgent dialogue.\n\nCamera Movement: Camera rapidly tracks alongside Image 1 as they sprint through the rain-soaked cyberpunk street, handheld style adding urgency.\n\nSubject & Action: Image 1 runs desperately through puddles, shouting \"快跑!\" in panic, rain streaming down their face.\n\nEnvironment & Mood: Wet pavement reflects vibrant neon signs in pink and blue. Heavy rain, steam rising from vents. Dark, moody atmosphere with high contrast lighting.",
-  
-  "validation": {
-    "passed": true,
-    "checks": {
-      "image_numbering": "PASS",
-      "dialogue_language": "PASS",
-      "no_creative_supplement": "PASS",
-      "structure": "PASS",
-      "line_count": "PASS"
-    }
+  "intent_type": "explicit | implicit",
+  "language_code": "ZH_CN | EN | JA",
+  "visual_constraints": {
+    "allowed": [],
+    "blocked": [],
+    "warnings": []
+  },
+  "asset_mapping": {
+    "img_001": "图片1"
   }
 }
 ```
 
 ---
 
-## 完整示例
+## Step 2｜运镜候选推荐
 
-### 输入
+### 规则
+- 用户已指定运镜：只生成 1-2 个优化变体
+- 用户未指定：推荐 3-4 个候选，并说明适用原因
+- 候选必须通过视觉约束过滤
 
-```
-用户描述: "赛博朋克街道，霓虹灯闪烁，主角在雨中奔跑"
-图片: [cyberpunk_street.jpg]
-台词: [{"speaker": "角色A", "text": "快跑！"}]
-```
+### 输出格式
+```text
+推荐 1：
+- 运镜：
+- 适配度：
+- 原因：
 
-### Step 1 输出
-
-```
-意图类型: implicit (未指定具体运镜)
-语言: ZH_CN
-约束: 无特殊约束
-图片映射: {"img_001": "Image 1"}
-```
-
-### Step 2 输出
-
-```
-📊 分析: 动作场景，推荐动态运镜
-
-推荐 1: Tracking Shot (跟拍) - High
-推荐 2: FPV (主观视角) - High  
-推荐 3: Fast Truck (快速平移) - Medium
-推荐 4: Whip Pan (甩镜头) - Medium
-```
-
-### Step 3 输出 (选择 Tracking Shot)
-
-```
-Cyberpunk thriller, tracking shot, neon-lit rainy street, urgent dialogue.
-
-Camera Movement: Camera rapidly tracks alongside Image 1 as they sprint through the rain-soaked cyberpunk street, handheld style adding urgency.
-
-Subject & Action: Image 1 runs desperately through puddles, shouting "快跑!" in panic, rain streaming down their face.
-
-Environment & Mood: Wet pavement reflects vibrant neon signs in pink and blue. Heavy rain, steam rising from vents. Dark, moody atmosphere with high contrast lighting.
-
----
-✅ 验证通过: 5/5 项检查全部通过
+推荐 2：
+...
 ```
 
 ---
 
-## 系统提示词依赖（非 resources）
+## Step 3｜中文主提示词生成
 
-- `../system-prompts/knowledge-base.md`
-- `../system-prompts/platform-prompts.md`
-- `../system-prompts/validation-rules.md`
+### 结构骨架（强制）
+```text
+镜头定位：
+镜头运动：
+主体动作：
+场景变化：
+光影与情绪：
+强约束：
+```
+
+### 生成规则
+1. 先写镜头的叙事目的
+2. 再写镜头运动
+3. 再写主体动作
+4. 再写场景变化
+5. 最后写强约束
+
+### 中文示例
+```text
+镜头定位：都市追逐场景中的高紧张单镜头，强调角色逃离的压迫感。
+镜头运动：镜头沿着图片1右侧低位跟拍，保持中近景，速度逐步加快，但不突然甩镜。
+主体动作：图片1在雨中急速奔跑，回头大喊“快跑！”，呼吸急促，肩膀紧绷，雨水沿脸侧滑落。
+场景变化：街面倒影被踩碎，霓虹灯在湿润路面反射，远处车灯形成虚化光斑。
+光影与情绪：冷蓝与玫红霓虹交错，整体压迫、急迫、潮湿。
+强约束：保持图片1的人物外观一致；不新增人物；不新增未提及道具；不出现字幕、水印、编号或 HUD。
+```
+
+### 可选英文增强版
+仅在平台明确需要时附加。
+
+---
+
+## Step 4｜严格验证
+
+### 必检项
+1. 编号或素材映射是否一致
+2. 台词是否保留原语言
+3. 是否新增未提及的关键元素
+4. 结构是否完整
+5. 是否存在互斥运镜
+6. 行数是否适中
+
+### 输出格式
+```json
+{
+  "passed": true,
+  "checks": {
+    "asset_mapping": "PASS",
+    "dialogue_language": "PASS",
+    "no_hard_hallucination": "PASS",
+    "structure": "PASS",
+    "motion_logic": "PASS"
+  }
+}
+```
+
+---
+
+## 最终输出格式
+
+```markdown
+### 单镜头分析
+- 任务：
+- 推荐运镜：
+
+### 中文主提示词
+...
+
+### 英文增强版（可选）
+...
+
+### 校验结果
+- pass / fail
+- 风险说明
+```

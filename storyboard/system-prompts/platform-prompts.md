@@ -1,85 +1,91 @@
-# AI 视频平台提示词参考（Knowledge Only）
+# AI 视频平台提示词参考
 
-本文件仅保留平台能力、术语、结构与参数参考，不承载执行流程规则。
+本文件仅保留各平台的推荐写法与术语映射。默认中文说明，英文只作为平台增强词。
 
 ---
 
 ## 1. OpenAI Sora
 
-### 1.1 常见结构
+### 中文推荐结构
 ```text
-[Scene Summary] + [Camera Shot/Angle] + [Camera Movement] +
-[Subject & Action] + [Lighting & Color] + [Style & Mood]
+场景概述 + 镜头类型/角度 + 镜头运动 + 主体动作 + 光影与色彩 + 风格氛围
 ```
 
-### 1.2 术语参考
-- 镜头类型：`close-up`, `extreme close-up`, `medium shot`, `wide shot`, `establishing shot`, `over-the-shoulder`
-- 机位角度：`low angle`, `high angle`, `bird's eye view`, `dutch angle`, `eye-level`, `POV`
-- 运动关键词：`pan`, `tilt`, `dolly in/out`, `tracking shot`, `crane`, `zoom`, `handheld`, `steadicam`, `drone shot`
-- 运动效果：`slow-motion`, `time-lapse`, `motion blur`, `shallow depth of field`
-
-### 1.3 示例
-```text
-A confident news anchor stands in a high-tech studio.
-Medium shot, low angle. Camera slowly dollies in as she delivers breaking news.
-Soft ambient lighting with blue accent tones.
-Cinematic documentary style.
-```
+### 使用建议
+- 先描述整体场景，再补镜头与动作细节。
+- 复杂动作建议按时间段拆开。
+- 要写“变化过程”，不要只写静态结果。
 
 ---
 
-## 2. Runway Gen-3 / Gen-4
+## 2. Runway Gen-4
 
-### 2.1 常见结构
+### 中文推荐结构
 ```text
-[Subject Motion] + [Scene Motion] + [Camera Motion] + [Style Descriptor]
+主体动作 + 场景动作 + 镜头动作 + 风格说明
 ```
 
-### 2.2 术语与组件
-- 角度：`low angle`, `high angle`, `overhead`, `FPV`, `handheld`, `wide angle`, `close up`
-- 运动：`tracking`, `panning`, `horizontal movement`, `vertical movement`, `tilt`, `zoom`
-- Gen-4 组件：
-  - `Subject Motion`
-  - `Camera Motion`
-  - `Scene Motion`
-  - `Style`
-
-### 2.3 方向与速度提示
-- 速度：`low speed`, `high speed`
-- 构图：`negative space`, `open foreground`, `layered background`
-
-### 2.4 示例
-```text
-Tracking shot: A cyclist on a coastal road, cliffs and ocean in background.
-Golden hour lighting, wind in hair. Motion: Truck Right, low speed.
-Cinematic, handheld stability.
-```
-
-### 2.5 常见参数
-- `-gs [1-100]`: guidance scale
-- `-neg [text]`: negative prompt
-- `-ar [16:9/9:16/1:1]`: aspect ratio
-- `-seed [number]`: reproducibility seed
+### 使用建议
+- 直接、具体、少绕弯。
+- 图生视频时，不重复图片里已经固定的静态信息。
+- 优先强调运动变化，而不是堆风格词。
 
 ---
 
-## 3. Pika
+## 3. Seedance 2.0
 
-### 3.1 常见控制词
-- 相机：`zoom in/out`, `pan left/right`, `tilt up/down`, `rotate clockwise/counterclockwise`
-- 质量控制：`-neg`, `-gs`, `-ar`, `-seed`
-
-### 3.2 功能特性
-- `Video-to-Video`
-- `Expand Canvas`
-- `Modify Region`
-
-### 3.3 示例
+### 中文推荐结构
 ```text
-A majestic eagle soaring through dramatic mountain clouds at sunset.
-Camera slowly follows from behind, golden light illuminating wings.
-Cinematic, wildlife documentary style.
--neg blurry, distorted, low quality
--gs 12
--ar 16:9
+素材映射 + 任务类型 + 时长与画幅 + 中文主提示词 + 可选英文增强词
+```
+
+### 使用建议
+- 先说明素材用途。
+- 再写镜头主线和时序。
+- 延长或编辑任务必须标明修改区间或新增秒数。
+
+---
+
+## 4. 通用中文术语与英文增强词
+
+| 中文术语 | 英文增强词 |
+| --- | --- |
+| 远景 | `wide shot` |
+| 中景 | `medium shot` |
+| 近景 | `close-up` |
+| 大特写 | `extreme close-up` |
+| 平视 | `eye level` |
+| 仰拍 | `low angle` |
+| 俯拍 | `high angle` |
+| 横摇 | `pan` |
+| 纵摇 | `tilt` |
+| 推镜 | `dolly in` |
+| 拉镜 | `dolly out` |
+| 跟拍 | `tracking shot` |
+| 手持感 | `handheld` |
+| 过肩镜头 | `over-the-shoulder` |
+| 主观视角 | `POV` |
+
+---
+
+## 5. 中文主稿示例
+
+```text
+场景概述：一名女主播站在高科技演播室中，准备播报突发新闻。
+镜头类型与角度：中景，轻微仰拍。
+镜头运动：镜头缓慢推进。
+主体动作：她看向镜头，短暂停顿后开始播报。
+光影与色彩：环境光偏冷蓝，屏幕边缘有柔和高光。
+风格氛围：专业、克制、纪录片式真实。
+```
+
+### 可选英文增强版示例
+
+```text
+Scene summary: A female news anchor stands in a high-tech studio, preparing to deliver breaking news.
+Shot and angle: medium shot, slight low angle.
+Camera motion: slow dolly in.
+Subject motion: she looks into the camera, pauses briefly, then begins speaking.
+Lighting and color: cool blue ambient light with soft edge highlights from the screens.
+Mood: professional, restrained, documentary realism.
 ```
