@@ -1,7 +1,7 @@
 ---
 name: lumina-narrative
-description: 用于故事结构、人物弧线、商业叙事与视频叙事蓝图；适配 narrative_to_storyboard、narrative_to_video、广告故事与故事类 prompt 组织
-version: "1.2"
+description: 用于故事结构、人物弧线、商业叙事与视频叙事蓝图；适配 consult.narrative、flow.story_to_video、revise.project，以及广告故事与故事类 prompt 组织
+version: "1.3"
 ---
 
 # lumina-narrative
@@ -27,7 +27,15 @@ version: "1.2"
 - 商业故事、广告叙事、品牌短片蓝图
 - 图转故事、图转角色、图转关系线
 - 长短篇叙事规划
-- 为 `narrative_to_storyboard`、`narrative_to_video` 准备 `scene / beat / video-unit` 级结构
+- 为 `consult.narrative`、`flow.story_to_video`、`revise.project` 准备 `scene / beat / video-unit` 级结构
+
+## 域边界与交接
+
+- `narrative` 负责叙事目标、人物驱动、结构蓝图和视频叙事单元，不负责最终剧本格式化、镜头级调度或最终平台 prompt 定稿
+- 当任务已经进入“场次、动作、对白怎么写”时，交给 `scriptwriting`
+- 当任务已经进入“镜头怎么拆、时长怎么分、转场和连续性怎么控”时，交给 `storyboard`
+- 当任务已经进入“图片/视频最终怎么写 prompt、怎么锁主体和风格”时，交给 `visual_generation`
+- 若用户只需要思路收敛或故事方向评估，可只输出蓝图，不强行补到下游终稿
 
 ## 核心硬规则
 
@@ -38,13 +46,13 @@ version: "1.2"
 - 先叙事功能，后语言质感；不要用漂亮句子掩盖结构空洞
 - 商业任务先锁目标受众、传播目标、卖点证据和 CTA
 - 视频叙事默认产出 `beat` 或 `video-unit` 蓝图，不直接越权写成镜头调度稿
-- `revision / polish` 类任务默认只修问题段落，不整份推翻
+- `revise.project / polish` 类任务默认只修问题段落，不整份推翻
 - 不新增用户未提供的关键角色、关键设定、关键情节结论
 - 输入明显不足时，先收敛假设边界，再给可执行首稿
 - 若当前存在活跃项目，优先复用已有角色 canon、场景 canon、风格方向和章节上下文
 - 同名主角默认视为同一角色，除非用户明确要求平行版本或重做新设定
 - “继续第二章 / 第三章” 必须输出追加章节思路，不要把整项目从头重写
-- “抽离人物图 / 场景图” 属于 `asset_prep`，目标是为后续视频准备可复用视觉资产
+- “抽离人物图 / 场景图” 默认对齐 `task.character_extract` 或 `task.scene_extract`，目标是为 `flow.story_to_video` 准备可复用视觉资产
 
 ## 输入契约
 
@@ -99,9 +107,9 @@ version: "1.2"
 - 适用：长篇、章节化叙事、世界观与主支线规划
 - 输出重点：世界观、主支线、章节目标卡、连载驱动力
 
-### MODE_VIDEO_PROMPT_BLUEPRINT
+### MODE_STORY_TO_VIDEO_BLUEPRINT
 
-- 适用：为视频生成准备叙事蓝图，而不是直接写镜头调度稿
+- 适用：为 `flow.story_to_video` 准备叙事蓝图，而不是直接写镜头调度稿
 - 输出重点：`15 秒` 视频单元、时序目标、主体变化、情绪落点、强约束
 
 ### MODE_POLISH
@@ -233,6 +241,39 @@ version: "1.2"
 - 局部精修
 - 质量复核
 
+## 标准输出协定
+
+复杂任务默认至少输出下面四层，不直接跳终稿：
+
+```text
+【任务卡】
+- 模式：
+- 主目标：
+- 成功标准：
+
+【素材标准化】
+- 已知事实：
+- 合理推断：
+- 明确未知：
+
+【叙事蓝图】
+- 主角 / 欲望 / 阻力：
+- beat / 场次 / 视频单元：
+- 情绪推进：
+
+【下游交接】
+- 给 scriptwriting：
+- 给 storyboard：
+- 给 visual_generation：
+- 假设与风险：
+```
+
+交接要求：
+
+- 给 `scriptwriting` 时，要明确场次功能、动作节点、角色状态和不可删信息
+- 给 `storyboard` 时，要明确 beat 顺序、时序重点、关键意象和强约束
+- 给 `visual_generation` 时，要明确主体锚点、场景锚点、情绪落点和不可变项
+
 ## 模式专项规则
 
 ### MODE_AD_COPY
@@ -339,7 +380,7 @@ CTA：
 - 章尾钩子：
 ```
 
-### MODE_VIDEO_PROMPT_BLUEPRINT
+### MODE_STORY_TO_VIDEO_BLUEPRINT
 
 - 默认输出中文主稿
 - 英文只作平台增强版
@@ -401,6 +442,14 @@ CTA：
 
 - 一镜到底、特殊运镜、产品 hero shot、长情绪镜头、定向编辑等任务，可以不按 `15 秒` 拆
 - 例外时仍要写清楚时长、目标和为什么必须单独成段
+
+## 失败回退
+
+- 结构发散时，先砍支线，只保留主角、主欲望、主阻力三件事
+- 图片转故事不稳时，回到“事实 / 推断 / 未知”三分法，不继续脑补
+- 商业叙事证据不足时，先缩回卖点-证据-CTA 主链，不堆情绪词
+- 视频叙事过满时，先压成一个 `15 秒` 单元，再决定是否拆多单元
+- 项目续写信息不足时，只继承已知 canon，把未知项显式标为待确认
 
 ## 质量闸门
 

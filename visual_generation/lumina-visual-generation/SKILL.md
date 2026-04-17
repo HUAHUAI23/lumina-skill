@@ -1,7 +1,7 @@
 ---
 name: lumina-visual-generation
-description: 用于图像与视频提示词、视觉锚点、平台化写法与多素材一致性控制；适配 prompt_only、direct_task、narrative_to_video 中的视觉生成部分
-version: "1.3"
+description: 用于图像与视频提示词、视觉锚点、平台化写法与多素材一致性控制；适配 task.image、task.video、task.character_extract、task.scene_extract、flow.story_to_video 与 revise.project 中的视觉生成部分
+version: "1.4"
 ---
 
 # lumina-visual-generation
@@ -25,7 +25,15 @@ version: "1.3"
 - 文生图、图生图、角色设定、场景空镜、广告 KV
 - 叙事宫格、同主体风格批量探索
 - 文生视频、图生视频、多参考图视频、视频延长、定向编辑
-- `prompt_only`、`direct_task`、`narrative_to_video` 中所有需要补足视觉提示词的阶段
+- `task.image`、`task.video`、`task.character_extract`、`task.scene_extract`、`flow.story_to_video`、`revise.project` 中所有需要补足视觉提示词的阶段
+- 承接旧 `image_prompt / video_prompt` 职责：负责最终图片 prompt、视频 prompt 与多素材视觉约束包
+
+## 域边界与交接
+
+- `visual_generation` 负责最终图片/视频 prompt package、锚点协议和失败回退，不负责新编故事主线或镜头级叙事重构
+- 如果上游 `narrative / scriptwriting / storyboard` 已经给出蓝图、场次或镜头策略，优先翻译和压实，不重新改写其主目标
+- 如果上游信息缺失，只补足必要假设，并显式标注，不把猜测写成既定条件
+- 项目内任务必须先判断资产来源：复用已有图、基于已有图生成变体、或新增文生图
 
 ## 核心硬规则
 
@@ -44,6 +52,7 @@ version: "1.3"
 - 视频任务先解决主体动作、场景动作、时序推进和强约束，再谈风格包装
 - 文本排版、海报文字、包装文案要写死具体内容，不指望模型自动理解
 - 涉及性感、裸露边界时，默认只处理成年人形象
+- 当 `storyboard` 已给出 shot/关键帧策略后，本 domain 负责把它们翻译成最终可投喂的图片/视频 prompt package
 
 ## 输入契约
 
@@ -165,6 +174,16 @@ version: "1.3"
 
 ### Step 4｜标准输出包
 
+## 标准输出协定
+
+- 首轮输出优先给“可直接投喂”的主稿，不把锚点、约束、参数和失败回退混成一段长句
+- 复杂任务默认带上 `资产来源` 与 `假设与风险`
+- 项目内任务默认显式标注：
+  - 复用已有图
+  - 图生图变体
+  - 新增文生图
+- 当用户要求严格一致性时，要写清“哪部分能锁、哪部分只能尽量逼近”
+
 图像任务默认输出：
 
 ```text
@@ -172,6 +191,7 @@ version: "1.3"
 - 模式：
 - 用途：
 - 比例：
+- 资产来源：
 - 主体锚点：
 - 场景锚点：
 - 风格锚点：
@@ -179,6 +199,7 @@ version: "1.3"
 - 中文主提示词：
 - 参数建议：
 - 失败回退：
+- 假设与风险：
 ```
 
 视频任务默认输出：
@@ -187,6 +208,7 @@ version: "1.3"
 【视频提示词包】
 - 模式：
 - 时长 / 画幅：
+- 资产来源：
 - 素材映射：
 - 主体动作：
 - 镜头动作：
@@ -196,6 +218,7 @@ version: "1.3"
 - 中文平台投喂稿：
 - 参数建议：
 - 失败回退：
+- 假设与风险：
 ```
 
 ## 图像任务规则
