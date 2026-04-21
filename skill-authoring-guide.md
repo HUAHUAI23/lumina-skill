@@ -1,28 +1,28 @@
-# Lumina Skill 编写说明
+# Lumina Prompt Template 编写说明
 
-> 更新时间：2026-04-17
-> 对应运行时：`lib/server/ai-chat/skills/*`、`lib/shared/ai-workflow-types.ts`、`scripts/import-lumina-skills*.ts`
+> 更新时间：2026-04-21
+> 对应运行时：`lib/shared/ai-skill-domains.ts`、`lib/server/ai-chat/handlers/index.ts`、`scripts/import-lumina-skills*.ts`
 
-## 1. 先理解当前运行时
+## 1. 当前模型是什么
 
-当前 skill 的本质是“补充提示词”，不是可供模型自由浏览的文件系统。
+当前 Prompt Template 不是“按创作能力分组”的老 skill 包，而是“按处理路径和处理步骤分组”的补充提示词。
 
-系统已经负责：
+系统已经固定：
 
-- agent 身份
-- workflow phase 指令
-- output contract
-- 工具边界
+- 路由
+- 输出 schema
+- 工具约束
+- 项目读写职责
+- flow 的阶段拆分
 
-skill 只应该补充：
+模板只负责补充：
 
-- 领域术语
-- 处理 SOP
-- 风格偏好
-- 常见限制
-- 质量标准
+- 该步骤的判断原则
+- 该步骤的领域术语
+- 该步骤的质量标准
+- 该步骤禁止做什么
 
-## 2. 推荐结构
+## 2. 目录结构
 
 ```text
 <domainKey>/
@@ -30,69 +30,89 @@ skill 只应该补充：
     └── SKILL.md
 ```
 
-当前可用 `domainKey`：
+要求：
 
-- `general`
-- `narrative`
-- `scriptwriting`
-- `storyboard`
-- `visual_generation`
+- `domainKey` 必须与运行时枚举完全一致
+- 一个 `domainKey` 可以有多个模板，但每个模板都必须服务同一个步骤
+- 不再使用 `general / narrative / storyboard / visual_generation` 这类旧抽象域
 
-目录约束：
+## 3. 当前可用 domainKey
 
-- 目录名必须与 `domainKey` 完全一致
-- 不再维护 `general_chat / image_prompt / video_prompt / shot_decomposition / shot_frame_planning` 这类旧目录别名
+### Consult
 
-## 2.1 最新功能结构
+- `consult.general`
+- `consult.narrative`
+- `consult.image_prompt`
+- `consult.video_prompt`
+- `consult.storyboard`
 
-- `consult.general`：通用咨询与需求澄清，优先使用 `general`
-- `consult.narrative`：故事、创意、结构咨询，优先使用 `narrative`
-- `task.image` / `task.video`：直接生成任务，优先使用 `visual_generation`
-- `task.character_extract` / `task.scene_extract`：抽离角色或场景资产，通常由 `narrative` 负责语义整理，`visual_generation` 负责视觉提示词
-- `flow.story_to_video`：完整故事到视频流程，组合使用 `narrative`、`scriptwriting`、`storyboard`、`visual_generation`
-- `revise.project`：项目内增量修订，按修订目标选择对应 domain
+### Task
 
-- `scriptwriting` 不是默认 consult pipeline 的独立入口，而是创作结构层，用于把故事整理成可拍、可拆分镜的剧本化中间稿。
-- 当前导入脚本只识别上述 5 个新 domainKey；`legacy/` 目录不会自动导入。
+- `task.image`
+- `task.video`
+- `task.character_extract`
+- `task.scene_extract`
 
-## 3. 写作原则
+### Asset
 
-- 把真正影响运行时行为的规则直接写进 `SKILL.md`
-- 保持短、硬、可执行
-- 不要重写系统定义的 schema、路由和工具协议
-- 不要假设模型还能 `read_file`
-- 不要把关键规则藏在资源目录里
+- `asset.character_from_image`
+- `asset.scene_from_image`
+- `asset.prop_from_image`
 
-## 4. 推荐内容
+### Flow
 
-`SKILL.md` 建议包含：
+- `flow.story_to_video.shot_split`
+- `flow.story_to_video.shot_storyboard_requirement`
+- `flow.story_to_video.shot_storyboard_plan`
+- `flow.story_to_video.shot_task_plan`
 
-- 定位
-- 适用场景
-- 核心硬规则
-- 输入契约
-- 域边界与交接
-- 标准输出骨架
-- 处理步骤
-- 失败回退
-- 质量闸门 / 质量标准
-- 项目连续性专则
+### Other
 
-优化原则：
+- `revise.project`
+- `router.consult_only`
 
-- 先写“这个 domain 负责什么、不负责什么”，避免 skill 互相越权
-- 先写标准输出骨架，再写长篇规则，保证运行时拿到的是可直接拼接的协议
-- 失败回退要可执行，不能只写“重试、优化一下”
-- 项目内场景要明确继承 canon、资产来源和是否为局部修订
-- 文案尽量短、硬、可判定，少写解释性散文
+## 4. 各类 domain 的边界
 
-## 5. 关于 legacy
+- `consult.*`
+  - 只做咨询，不写项目。
+  - 不读取项目资产做答案主依据。
+- `task.image` / `task.video`
+  - 只整理当前轮需求与当前轮上传素材。
+  - 不读取项目维护的人物、场景、道具。
+- `task.character_extract` / `task.scene_extract`
+  - 输出稳定 identityKey + description。
+  - 不负责生成任务图，不负责绑定图片。
+- `asset.*_from_image`
+  - 一张上传图对应一条绑定结果。
+  - 必须遵守用户显式写的“图1是角色A”这类语义。
+- `flow.story_to_video.*`
+  - 只消费项目里已存在的人物、场景、道具。
+  - 不自动创建资产，不跳出当前 flow 阶段职责。
+- `revise.project`
+  - 只产出结构化 patch。
+- `router.consult_only`
+  - 只能在 5 个 `consult.*` 中选路。
 
-`legacy/` 中保留了旧版多文件 skill 包，方便迁移时参考：
+## 5. 推荐写法
 
-- `story` -> `narrative`
-- `screenplay` -> `scriptwriting`
-- `image_prompt` -> `visual_generation`
-- `storyboard` -> `storyboard`
+每个 `SKILL.md` 建议包含：
 
-这些旧文件不再是当前导入主路径，也不会被 `scripts/import-lumina-skills*.ts` 自动导入。
+- 这个步骤负责什么
+- 这个步骤绝不能做什么
+- 输入里哪些信号最重要
+- 输出时优先保证什么
+- 失败时如何保守返回
+
+推荐风格：
+
+- 短
+- 硬
+- 可执行
+- 少背景散文
+
+## 6. 维护约束
+
+- 新增 domain 时，必须先更新运行时枚举，再补模板目录。
+- 删除 domain 时，必须同步删掉模板目录和 README 中的说明。
+- 示例包要始终保持“collector 可直接读取”的状态，不能只写文档不落目录。
+- 示例包不应保留旧 `legacy` 目录、嵌套仓库 `.git` 或其他历史残留。

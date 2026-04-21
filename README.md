@@ -1,66 +1,74 @@
-# Lumina Skill Pack
+# Lumina Prompt Template Pack
 
-基于 Lumina 当前 AI Chat skill 运行时整理的示例技能包。
+这是一套按 Lumina 当前运行时真实 `domainKey` 组织的示例提示词包，可被
+`scripts/import-lumina-skills.ts` 直接导入。
 
-## 当前结构
+## 目录约束
 
-```text
-skill-lumina/
-├── general/
-│   └── lumina-general/
-├── narrative/
-│   └── lumina-narrative/
-├── scriptwriting/
-│   └── lumina-scriptwriting/
-├── storyboard/
-│   └── lumina-storyboard/
-├── visual_generation/
-│   └── lumina-visual-generation/
-├── legacy/
-└── skill-authoring-guide.md
-```
+- 目录结构必须是 `<domainKey>/<skillName>/SKILL.md`
+- 顶层目录名必须和运行时 `PromptDomainKey` 完全一致
+- 一个目录对应一个处理步骤，不再复用旧的“通用创作域”
+- `SKILL.md` 只放补充规则，不重写系统 schema、路由和工具协议
 
-说明：
+## 当前包含的 domainKey
 
-- 新运行时推荐使用 `<domainKey>/<skillName>/SKILL.md`。
-- 目录名必须与 `domainKey` 完全一致，不做别名映射。
-- `SKILL.md` 是主路径，真正会进入运行时的关键规则应直接写在这里。
-- `legacy/` 保存旧版多文件 skill 包，仅作迁移参考，不参与当前导入规范。
+### Consult
 
-## 域映射
+- `consult.general`
+- `consult.narrative`
+- `consult.image_prompt`
+- `consult.video_prompt`
+- `consult.storyboard`
 
-| 新 domainKey | 用途 |
-| --- | --- |
-| `general` | 通用问答、澄清、转单引导 |
-| `narrative` | 故事结构、人物弧线、叙事组织 |
-| `scriptwriting` | 场景、动作、对白、剧本格式 |
-| `storyboard` | 镜头设计、分镜拆解、连续性 |
-| `visual_generation` | 图像/视频提示词、构图、风格、强约束 |
+### Task
 
-## 功能结构
+- `task.image`
+- `task.video`
+- `task.character_extract`
+- `task.scene_extract`
 
-| 功能分层 | 典型 pipeline / 用途 | 推荐主 domain |
-| --- | --- | --- |
-| `consult` | `consult.general` 通用问答与需求澄清 | `general` |
-| `consult` | `consult.narrative` 故事与创意咨询 | `narrative` |
-| `task` | `task.image` / `task.video` 直接生成任务 | `visual_generation` |
-| `task` | `task.character_extract` / `task.scene_extract` 抽离角色或场景资产 | `narrative` + `visual_generation` |
-| `flow` | `flow.story_to_video` 故事到视频完整流程 | `narrative` / `scriptwriting` / `storyboard` / `visual_generation` |
-| `revise` | `revise.project` 项目内增量修订 | 按目标选择 `narrative` / `scriptwriting` / `storyboard` / `visual_generation` |
+### Asset
 
-- `scriptwriting` 是创作前置结构域，主要服务剧本化整理、场景化表达和向 `storyboard` 的下游衔接。
-- 当前导入脚本按这 5 个新 `domainKey` 工作；`legacy/` 仅作迁移参考，不会被自动导入。
+- `asset.character_from_image`
+- `asset.scene_from_image`
+- `asset.prop_from_image`
 
-## 导入
+### Flow
 
-```bash
-pnpm tsx --env-file=.env scripts/import-lumina-skills.ts --scope=system --repo=https://github.com/<you>/skill-lumina.git
-```
+- `flow.story_to_video.shot_split`
+- `flow.story_to_video.shot_storyboard_requirement`
+- `flow.story_to_video.shot_storyboard_plan`
+- `flow.story_to_video.shot_task_plan`
 
-如果要导入到用户域：
+### Other
+
+- `revise.project`
+- `router.consult_only`
+
+## 使用原则
+
+- `consult.*` 只做咨询，不写项目资产或 shot。
+- `task.image` / `task.video` 只读本轮对话上传素材，不读项目维护资产。
+- `task.*_extract`、`asset.*_from_image`、`flow.story_to_video.*`、`revise.project`
+  才参与项目结构化处理。
+- `flow.story_to_video.*` 只消费项目里已有的人物、场景、道具，不自动创建新资产。
+
+## 导入示例
 
 ```bash
-pnpm tsx --env-file=.env scripts/import-lumina-skills.ts --scope=user --userId=<id> --repo=https://github.com/<you>/skill-lumina.git
+pnpm tsx --env-file=.env scripts/import-lumina-skills.ts --scope=system --source=./tmp/skill-lumina
 ```
 
-本地目录导入仍然支持，但需要显式传 `--source=/path/to/skill-lumina`。
+```bash
+pnpm tsx --env-file=.env scripts/import-lumina-skills.ts --scope=user --userId=<id> --source=./tmp/skill-lumina
+```
+
+## 维护说明
+
+- 这套目录本身就是 collector 的测试 fixture。
+- 目录里不应保留 `legacy/`、嵌套 `.git/` 或其他与当前 prompt pack 无关的残留内容。
+- 新增或删除 domain 时，需要同步更新：
+  - `lib/shared/ai-skill-domains.ts`
+  - `lib/server/ai-chat/skills/domain-catalog.ts`
+  - `tmp/skill-lumina/README.md`
+  - `tmp/skill-lumina/skill-authoring-guide.md`
