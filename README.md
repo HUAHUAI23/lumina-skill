@@ -64,7 +64,7 @@
 - `project.bind_style` 只维护项目级风格，不维护人物、场景、道具资产。
 - `task.image` / `task.video` 只消费本轮上传素材，不读取项目维护资产。
 - `task.*_extract`、`asset.*_from_image`、`flow.story_to_video.*`、`revise.project` 才参与项目结构化处理。
-- `flow.story_to_video.*` 只消费项目内已存在的人物、场景、道具，不自动创建新资产。
+- `flow.story_to_video.*` 优先消费项目内已存在的人物、场景、道具；剧情需要但项目未绑定的可见元素，可以规划镜头级文生图兜底，但不自动创建新资产。
 
 ## 导入示例
 
