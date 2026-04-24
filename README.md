@@ -25,6 +25,11 @@
 - `task.video`
 - `task.character_extract`
 - `task.scene_extract`
+- `task.prop_extract`
+
+### Project
+
+- `project.bind_style`
 
 ### Asset
 
@@ -35,9 +40,8 @@
 ### Flow
 
 - `flow.story_to_video.shot_split`
-- `flow.story_to_video.shot_storyboard_requirement`
-- `flow.story_to_video.shot_storyboard_plan`
-- `flow.story_to_video.shot_task_plan`
+- `flow.story_to_video.shot_plan`
+- `flow.story_to_video.shot_prompt_package`
 
 ### Other
 
@@ -57,6 +61,7 @@
 ## 使用边界
 
 - `consult.*` 只做咨询，不写项目数据。
+- `project.bind_style` 只维护项目级风格，不维护人物、场景、道具资产。
 - `task.image` / `task.video` 只消费本轮上传素材，不读取项目维护资产。
 - `task.*_extract`、`asset.*_from_image`、`flow.story_to_video.*`、`revise.project` 才参与项目结构化处理。
 - `flow.story_to_video.*` 只消费项目内已存在的人物、场景、道具，不自动创建新资产。
