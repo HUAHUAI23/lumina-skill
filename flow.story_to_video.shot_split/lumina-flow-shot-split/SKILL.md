@@ -37,7 +37,7 @@ description: flow.story_to_video.shot_split 的补充提示词；用于把故事
 - 台词不能孤立出现；每句台词要由前一镜头的动作、表情、信息或冲突触发，并推动下一镜头。
 - 对话场面要补必要的听者反应镜头，明确谁听见了什么、为什么下一句会发生。
 - 只引用当前项目里已存在的稳定资产，不臆造新对象。
-- 每个 shot 都要尽量给足可用于后续生图/融图的资产引用：出现了谁、在哪里、关键道具是什么，就在 softRefs 中引用对应 identityKey，方便后续用绑定图保持人物和场景一致性。
+- 每个 shot 都要尽量给足可用于后续生图/融图的资产引用：出现了谁、在哪里、关键道具是什么，就在 softRefs 中引用项目内的稳定资产名，方便后续用绑定图保持人物和场景一致性。
 - 对话、字幕、BGM、音效只做镜头级结构化表达，不提前进入 provider 语法。
 - 关联资产只引用项目中已经存在的稳定命名，不写自由描述，不创造新名字。
 - 镜头时长尽量围绕系统给出的 `recommendedShotDurationSeconds`，并尽量落在 `minRecommendedShotDurationSeconds` 与 `maxRecommendedShotDurationSeconds` 之间，不要拆成无意义短镜头。
