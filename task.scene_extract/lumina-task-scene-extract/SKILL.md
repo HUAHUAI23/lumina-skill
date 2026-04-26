@@ -35,13 +35,22 @@ description: task.scene_extract 的补充提示词；用于从文本中抽取稳
 - 背景中的普通动物群、环境生物或远景生态只在它们服务空间氛围时写入 key_elements；有独立身份和行动连续性的生物不要放入场景。
 - 医院、街道、工地、村庄等只在承载重要剧情或后续可能复用时新增；一笔带过的地点放入 unresolvedMentions 或省略。
 
+## 状态阶段与反常规环境
+
+- 场景资产要记录空间的稳定结构，也要记录会影响后续分镜的一组关键状态：季节、天气、毁坏/修复、荒废/繁盛、污染/净化、冻死/复苏、白天/夜晚、贫穷/富丽等。
+- 同一空间如果经历重大状态变化，通常仍保持一个场景资产，用 state_variants、seasonal_states、damage_state、weather_state、key_absences 等属性记录，而不是拆成多个场景。
+- 当场景中的核心元素处于反常规状态时，必须显式记录默认特征缺失。例如果园冻死应写“光秃开裂树干、没有叶片、没有果实、没有鲜艳橘子”；废弃房屋应写“破窗、剥落墙皮、无人维护、没有整洁新装修”。
+- 如果场景的情绪来自规模和压迫感，应记录 terrain_layout、scale_cues、spatial_pressure 等可生成信息，例如“大片乱石坡、梯田层级、人物在远景中显得渺小”。
+- 植物、农作物、建筑群、雪地血迹、泥水木牌等如果主要服务空间气氛和连续性，可进入 key_elements；如果它们还需要独立特写、操作或跨场景复用，再交由道具抽取链路沉淀。
+
 ## 工作方法
 
 - 先判断文本里的空间是否已经能复用到现有场景。
 - 只有无法复用、且值得长期维护的空间才新增。
 - 信息不足但明显被提及的地点，放入待解析而不是强行新建。
-- 优先补充这些稳定属性：space_type、era、terrain_layout、architecture_style、mood、lighting、time_of_day、season、weather、key_elements、dominant_colors。
+- 优先补充这些稳定属性：space_type、era、terrain_layout、scale_cues、spatial_pressure、architecture_style、mood、lighting、time_of_day、season、weather、weather_state、damage_state、state_variants、key_elements、key_absences、dominant_colors。
 - 场景描述要能支撑“无人空镜参考图”：写清空间结构、可辨识物、材质、光线和整体年代/地域气质，不把角色动作写成场景主体。
+- 对会被模型默认美化的地点，要在描述或属性中写清“没有什么”：没有人群、没有现代装潢、没有绿叶果实、没有整洁街道、没有温暖灯光等，具体以剧情事实为准。
 - 最终保留可复用、可视觉化的场景说明；新增场景会由下游链路继续生成图片任务规划。
 
 ## 质量标准
@@ -49,6 +58,7 @@ description: task.scene_extract 的补充提示词；用于从文本中抽取稳
 - 场景列表稳定、不重复。
 - 描述能支撑后续画面生成和连续性维护。
 - 每个场景资产应能作为分镜图生图的空间锁定参考，而不只是抽象气氛词。
+- 场景的关键状态不会被宽泛名称冲掉；如果故事需要荒芜、枯死、雪灾、破败或复苏，应在属性中有可见证据和排他性缺失。
 
 ## 失败回退
 

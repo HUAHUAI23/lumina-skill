@@ -30,6 +30,8 @@ description: task.prop_extract.image_prompt 的补充提示词；用于把单个
 - 提示内容优先服务道具设定建立，而不是剧情分镜。
 - 道具图不承担角色动作或场景叙事；不要让人物、手、桌面杂物、背景建筑抢主体。
 - 如果道具存在磨损、年代感、刻痕、血迹、泥土等稳定标记，只保留文本支持的部分。
+- 如果道具的叙事价值来自旧、破、脏、磨损、血迹、泥水、褪色、泡烂、字迹模糊或多年使用，prompt 必须把这些状态作为主体特征，而不是生成崭新干净的商品图。
+- 准确中文长句、复杂手写内容、文件细字和牌面文字不要押给生图模型。prompt 应优先生成空白或半模糊的承载面、粗糙笔迹痕迹和留白区域；准确文字适合后期贴图或字幕层覆盖。
 
 ## 工作方法
 
@@ -40,8 +42,10 @@ description: task.prop_extract.image_prompt 的补充提示词；用于把单个
 - 可按事实需要补充 `material_closeup`：后续图生图变体，保持同一物体身份，展示关键纹理、磨损、刻痕、发光或材质细节，不要生成新道具。
 - 再决定适合的构图：避免裁切、遮挡和复杂背景。
 - 提示词应包含：prop_type、shape、material、color、size_scale、texture、wear_state、key_markings、usage 中有文本依据的部分。
+- 如果 key_markings 是长文本，只描述“有手写痕迹/墨迹/刻痕/留白位置”和材质状态，不要求模型生成可读长句。
 - 背景使用 plain / simple / neutral / clean background；如果项目风格需要真实质感，可用克制的粗糙台面或地面，但不能变成复杂场景。
 - negativePrompt 应排除 people、person、human、hand、hands、holding、clutter、busy background、multiple objects、cropped、blocked。
+- 对旧损道具，negativePrompt 还应克制排除 pristine、brand new、glossy、plastic、clean surface 等容易误补的默认质感。
 - 最终整理成一条道具资产任务；没有必要多图时不要写 variants。只有输出多个 variants 时，系统才会编排成同一物体的“文生图基准图 → 图生图派生图”流程，适合沉淀为道具参考图。
 
 ## 质量标准
@@ -50,6 +54,7 @@ description: task.prop_extract.image_prompt 的补充提示词；用于把单个
 - 画面目标明确，没有空泛修辞。
 - 结果适合后续作为视频中的道具参考；多图只在确实需要锁定额外角度或材质锚点时使用。
 - 道具边缘、轮廓和主要材质必须清楚，不能靠文字说明才能理解。
+- 道具的磨损、泥污、血迹、字迹模糊和年代感不会被默认清洁或商品化。
 
 ## 失败回退
 
