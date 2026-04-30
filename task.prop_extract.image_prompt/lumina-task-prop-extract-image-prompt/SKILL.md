@@ -44,8 +44,8 @@ description: task.prop_extract.image_prompt 的补充提示词；用于把单个
 - 提示词应包含：prop_type、shape、material、color、size_scale、texture、wear_state、key_markings、usage 中有文本依据的部分。
 - 如果 key_markings 是长文本，只描述“有手写痕迹/墨迹/刻痕/留白位置”和材质状态，不要求模型生成可读长句。
 - 背景使用 plain / simple / neutral / clean background；如果项目风格需要真实质感，可用克制的粗糙台面或地面，但不能变成复杂场景。
-- negativePrompt 应排除 people、person、human、hand、hands、holding、clutter、busy background、multiple objects、cropped、blocked。
-- 对旧损道具，negativePrompt 还应克制排除 pristine、brand new、glossy、plastic、clean surface 等容易误补的默认质感。
+- 负向约束应排除 people、person、human、hand、hands、holding、clutter、busy background、multiple objects、cropped、blocked。
+- 对旧损道具，负向约束还应克制排除 pristine、brand new、glossy、plastic、clean surface 等容易误补的默认质感。
 - 最终整理成一条道具资产任务；没有必要多图时不要写 variants。只有输出多个 variants 时，系统才会编排成同一物体的“文生图基准图 → 图生图派生图”流程，适合沉淀为道具参考图。
 
 ## 质量标准

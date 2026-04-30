@@ -40,8 +40,9 @@
 ### Flow
 
 - `flow.story_to_video.shot_split`
-- `flow.story_to_video.shot_plan`
-- `flow.story_to_video.shot_prompt_package`
+- `flow.story_to_video.path.1_5_pro`
+- `flow.story_to_video.path.blend_2_0`
+- `flow.story_to_video.path.scene_character_closeup_2_0`
 
 ### Other
 
@@ -53,7 +54,7 @@
 最终送给模型的提示词由三层组成：
 
 - 程序系统指令：定义当前步骤的硬边界和运行时上下文。
-- 路径技能规范：来自本目录，只补充该步骤的领域判断与质量标准。
+- 路径技能规范：来自本目录，只补充该处理路径的领域判断与质量标准。
 - 程序协议约束：结构化输出协议、schema 校验和工具调用规则，由代码注入。
 
 其中只有第二层属于可维护的外部提示词资产。
@@ -64,7 +65,8 @@
 - `project.bind_style` 只维护项目级风格，不维护人物、场景、道具资产。
 - `task.image` / `task.video` 只消费本轮上传素材，不读取项目维护资产。
 - `task.*_extract`、`asset.*_from_image`、`flow.story_to_video.*`、`revise.project` 才参与项目结构化处理。
-- `flow.story_to_video.*` 优先消费项目内已存在的人物、场景、道具；剧情需要但项目未绑定的可见元素，可以规划镜头级文生图兜底，但不自动创建新资产。
+- `flow.story_to_video.shot_split` 只做公共拆镜，路径选择、视频模式判断、分镜图要求和提示词风格交给对应 `flow.story_to_video.path.*` domain。
+- `flow.story_to_video.path.*` 优先消费项目内已存在的人物、场景、道具；剧情需要但项目未绑定的可见元素，可以规划镜头级文生图兜底，但不自动创建新资产。
 
 ## 导入示例
 
