@@ -15,6 +15,7 @@
 
 - `consult.general`
 - `consult.narrative`
+- `consult.screenplay`
 - `consult.image_prompt`
 - `consult.video_prompt`
 - `consult.storyboard`
@@ -24,8 +25,11 @@
 - `task.image`
 - `task.video`
 - `task.character_extract`
+- `task.character_extract.image_prompt`
 - `task.scene_extract`
+- `task.scene_extract.image_prompt`
 - `task.prop_extract`
+- `task.prop_extract.image_prompt`
 
 ### Project
 
