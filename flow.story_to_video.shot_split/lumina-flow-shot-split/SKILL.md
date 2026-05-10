@@ -14,8 +14,8 @@ description: flow.story_to_video.shot_split 的补充提示词；用于把已确
 ## 适用场景
 
 - 用户已经通过 `consult.storyboard` 确认一份分镜文本，需要进入 story_to_video。
-- 输入可能包含：镜头编号（`### 镜头 NN：标题（约 X 秒）`）、对话块（`### 对话块 NN：标题（约 X 秒）`）、镜头块内的 `[00:00-00:05]` 时间戳硬剪辑、顶部 `## 角色锚点` + `## 连续性账本` 跨镜手册、字段化栏目（叙事目标 / 场景/氛围 / 画面叙事 / 动作与调度 / 景别/角度/运镜 / 视线与空间 / 台词/lip-sync / 声音三子层 / 因果/物理 / 负向约束 / 剪辑承接 等）。
-- 需要把文本里的镜头顺序、台词、声音、角色、场景、道具、时长倾向、负向约束、SDV 矢量、命名光场和跨镜手册稳定保留下来。
+- 输入可能包含：镜头编号（`### 镜头 NN：标题（约 X 秒）`）、对话块（`### 对话块 NN：标题（约 X 秒）`）、镜头块内的 `[00:00-00:05]` 时间戳硬剪辑、顶部 `## 角色锚点` + `## 连续性账本` + `## 视觉参考池` 三段跨镜手册、字段化栏目（叙事目标 / 场景/氛围 / 画面叙事 / 动作与调度 / 景别/角度/运镜 / 视线与空间 / 台词/lip-sync / 声音三子层 / 因果/物理 / 参考池引用 / 衔接 / 负向约束 / 剪辑承接 等）。
+- 需要把文本里的镜头顺序、台词、声音、角色、场景、道具、时长倾向、负向约束、SDV 矢量、命名光场、参考池槽位、衔接 5W 和跨镜手册稳定保留下来。
 - 兼容用户直接把剧本或故事发进来，但只做保守拆分；不要在这里承担完整分镜创作。
 
 ## 负责什么
@@ -85,28 +85,68 @@ description: flow.story_to_video.shot_split 的补充提示词；用于把已确
 活跃道具：门禁卡（姜夜口袋）, 监控屏（墙面右上）
 光线基线：保安室冷白荧光 4000K + 玻璃外门头灯红 3200K（频闪 1.5Hz）
 情绪轨迹：小美 试探→警觉→恐惧；姜夜 慵懒→压制→冷漠
+道具状态机：门禁卡 完整(shot1) → 被姜夜手指摩挲(shot4) → 拍在桌面(shot7) → 滑落地面(shot12)
+光线连续矩阵：shot1-6 4000K 冷白 + 红 3200K 频闪；shot7 加 monitor 6500K 蓝；shot8-12 红频闪频率 1.5Hz→3Hz
+声音桥接计划：shot3→4 J-cut 门禁咔哒提前 0.4s；shot7→8 L-cut 监控蜂鸣延伸 1.2s；shot11→12 sound_bridge 雨声渐强
 ```
 
 消费规则：
 
 - 原样存到 shot list 的全局元数据 `continuity_ledger`（不是单 shot 字段），供下游做跨镜核对。
+- `道具状态机` / `光线连续矩阵` / `声音桥接计划` 三段是新增字段；分别存到 `continuity_ledger.prop_state_machine` / `continuity_ledger.lighting_matrix` / `continuity_ledger.sound_bridge_plan`，每段保留原文。
 - 拆分镜头时**不修改账本**；只有当用户回到 `consult.storyboard` 显式改剧情时账本才会变。
 - 校验：每个 shot 的时间、光线、情绪走向不能与账本冲突；冲突就在质量说明里 flag，不擅自改 shot。
+- **道具状态校验**：shot 描述里出现状态机里的道具时，状态描述应与该 shot 的状态机阶段一致；不一致 flag「shot N 道具 X 状态与连续性账本不符」。
+- **声音桥接校验**：账本声音桥接计划提到的 shot 对（如 shot3→4），两个 shot 的 audio.sfx[] / audio.ambient 应该呼应；缺失 flag。
+
+### `## 视觉参考池`（新增 manifest 段，必须解析）
+
+格式形如：
+```
+图像槽 (≤9):
+  @char_main_xiaomei      小美三视图
+  @char_main_jiangye      姜夜三视图
+  @scene_baoanshi         保安室主图
+  @lighting_baoanshi      命名光场参考
+  @prop_keycard           门禁卡特写
+视频槽 (≤3):
+  @motion_pushin          标准 push-in 节奏 2s
+音频槽 (≤3):
+  @ambient_rain_indoor    室内雨声 5s loop
+  @bgm_tension            压力 BGM 8s
+```
+
+消费规则：
+
+- 解析每个 `@slot_name` 行，提取 `slot`（含 `@` 前缀）、`type`（image / video / audio，按所在子段）、`description`，存到全局元数据 `reference_pack[]`。
+- 校验槽位上限：`image` ≤ 9 / `video` ≤ 3 / `audio` ≤ 3；超出 flag「视觉参考池超 Seedance Universal Reference 上限」。
+- 校验 video / audio 总长 ≤ 15s（如果声明里有时长，例如 `5s loop` / `8s`）；超出 flag。
+- 解析 `slot` 命名：`@<purpose>_<name>`，purpose 必须是 `char_main / char_outfit / char_face / scene / lighting / prop / style_palette / motion / transition / ambient / bgm / voice` 之一；非枚举值 flag「参考池槽位 purpose 非标准」但仍存入。
+- **每个 shot 的"参考池引用"字段**（详见下面 §下游约束与 meta 字段透传）解析出的 `@slot` 必须能在全局 `reference_pack[]` 里找到；找不到 flag「shot N 引用未声明的参考池槽位 @xxx」。
+- **顶部参考池缺失但项目里有稳定资产**时，按现行守恒模式继续，flag「缺视觉参考池 manifest，跨镜一致性回退到纯 token 模式，建议回 `consult.storyboard` 顶部补 `## 视觉参考池`」。
+
+### Manifest 格式互斥校验
+
+`consult.storyboard` 顶部的 `## 角色锚点` 是**多行格式**（每行一个角色，字段用 ` / ` 分隔）；姊妹 skill `consult.storyboard-script-to-shot-prompts` 用的是**单行 `角色锚点：A=...;B=...` 格式**。本 skill 只处理多行格式。
+
+如果输入顶部命中单行 `角色锚点：A=...;B=...` 或单行 `参考池：@xxx=...;@xxx=...` 格式，**立即提示**「输入是紧凑格式 manifest，应使用姊妹 skill `lumina-flow-shot-split-scene-as-shot` 处理」并停止结构化，不要硬解析。
 
 ## 工作方法
 
 1. 先判断输入是否为已确认分镜。命中明确镜头编号、镜头块、对话块或”已确认/按这个执行”等语义时，进入守恒模式。
-2. **先读顶部跨镜手册**（角色锚点 + 连续性账本），按上面的消费规则建立全局上下文。
+2. **先读顶部跨镜手册三段**（`## 角色锚点` + `## 连续性账本` + `## 视觉参考池`），按上面的消费规则建立全局上下文。如果顶部出现的是单行紧凑格式 manifest，提示用户切姊妹 skill。
 3. 按原文顺序建立镜头清单，保留分集、场景和镜头标题。
-4. 对每个镜头/对话块提取已有信息：叙事目标、画面动作、景别/角度/运镜、视线/空间矢量、角色、场景、道具、台词/lip-sync、声音三子层、负向约束、时长、转场，以及创作 meta（情绪强度、暗线、因果/物理）。
+4. 对每个镜头/对话块提取已有信息：叙事目标、画面动作、景别/角度/运镜、视线/空间矢量、角色、场景、道具、台词/lip-sync、声音三子层、参考池引用、衔接 5W、负向约束、时长、转场，以及创作 meta（情绪强度、暗线、因果/物理）。
 5. **识别对话块和时间戳硬剪辑**，按 §”对话块与时间戳拆分”里的规则展开成连续 sub-shot；没有对话块和时间戳的镜头按现行守恒模式直接转 shot。
 6. 检查镜头边界：出现空间变化、主体变化、情绪反向、新信息揭示、动作结果落点、声音文本超载时，才进一步拆成连续 shots。
 7. 整理相邻承接：人物位置、朝向、视线、手中道具、动作收尾、环境声和情绪余韵不能无原因跳变。
-8. 匹配项目资产：按 §”跨镜手册消费”里的人物引用规则；锚点 + 项目资产可以并存，缺资产时用锚点占位。
-9. 人物查漏：每个镜头最后单独核对人物引用，不能因为人物只在台词、旁白、背影、反应或局部特写中出现就漏掉；并对照锚点 manifest 校验。
-10. 做容量标注：估算台词/旁白长度、可说话时间、停顿和余韵。过载时优先拆分或标注过载，不吞掉关键句；lip-sync 台词额外按三件套（引号 + 情绪前缀 + ≤12 汉字）校验。
-11. 透传下游约束：负向约束、声音三子层、SDV 矢量、因果/物理、meta 字段必须按 §”下游约束与 meta 字段透传”原样落到结构化输出，不丢、不改写。
-12. 最后做守恒核对：镜头数量变化是否有必要，关键原文是否保留，顺序是否一致，资产是否未伪造，跨镜手册是否未被改动。
+8. **解析每镜的"衔接"块**（5W + 衔接类型 + 重复 token + Seedance 输入模式 + 首帧参考），按 §”跨 shot 衔接 (handoff) 字段”规则原样落到结构化输出。第一镜可省略衔接；第二镜起缺衔接 flag 但不补写。
+9. 匹配项目资产 + 参考池槽位：按 §”跨镜手册消费”里的人物引用规则；项目稳定资产名进 `characterRef`，锚点字符串进 `anchor_descriptor`，参考池槽位进 `reference_refs[]`，三者并存。
+10. 人物查漏：每个镜头最后单独核对人物引用，不能因为人物只在台词、旁白、背影、反应或局部特写中出现就漏掉；并对照锚点 manifest 校验。
+11. 做容量标注：估算台词/旁白长度、可说话时间、停顿和余韵。过载时优先拆分或标注过载，不吞掉关键句；lip-sync 台词额外按三件套（引号 + 情绪前缀 + ≤12 汉字）校验。
+12. **判定 Seedance 调用模式**：每个 shot 的 `seedance_call_mode` 顶层字段从该 shot 的衔接块 `Seedance 输入模式` 字段读出；缺失时默认 `text_to_video` 并 flag「shot N 缺 Seedance 输入模式声明，回退默认 text_to_video，跨镜一致性可能下降」。
+13. 透传下游约束：负向约束、声音三子层、SDV 矢量、因果/物理、参考池引用、衔接、meta 字段必须按 §”下游约束与 meta 字段透传”原样落到结构化输出，不丢、不改写。
+14. 最后做守恒核对：镜头数量变化是否有必要，关键原文是否保留，顺序是否一致，资产是否未伪造，跨镜手册是否未被改动，衔接 5W 是否齐全。
 
 ## 镜头边界整理
 
@@ -143,6 +183,77 @@ description: flow.story_to_video.shot_split 的补充提示词；用于把已确
 
 如果用户用的是 `### 镜头 NN`（不是对话块），且没有 `[00:00-00:05]` 时间戳，就按现行守恒模式逐镜转 shot，不要再拆。手控正反打和声明式对话块在同一份分镜里可以混用，shot_split 按每个块的实际语法分别处理。
 
+## 跨 shot 衔接 (handoff) 字段
+
+上游 `consult.storyboard` 在每个镜头里写了"衔接"块，这是 10+ shot 长叙事跨镜不漂的最高杠杆字段。shot_split 必须解析并原样落到结构化输出。
+
+### 输入字段格式
+
+```
+衔接：
+  出帧状态：（上一镜末帧人物位置/视线/手部姿态/动作完成度/声音残响）
+  入帧状态：（本镜首帧上述要素）
+  衔接类型：match_on_action / eyeline_match / sound_bridge / j_cut / l_cut / graphic_match / concept_cut / hard_cut
+  重复 token：@char_main_xxx + @scene_xxx + ...（共享角色/空间/声音 token，至少 1 个）
+  Seedance 输入模式：text_to_video / image_to_video_first_frame / first_last_frame / ref_pack / nine_panel_grid_i2v / video_extend
+  首帧参考：@last_frame_of_shotNN / @char_main_xxx / @grid_main / ...（非 text_to_video 模式必填）
+```
+
+### 落到结构化输出
+
+每个 shot 的 `handoff` 字段：
+
+```json
+{
+  "handoff": {
+    "previous_shot_outframe": "shot07 末帧——小美推门走进保安室，身体前倾...",
+    "current_shot_inframe":  "门把仍被小美左手握住，门已开 80°...",
+    "transition_type": "match_on_action",
+    "repeated_tokens": ["@char_main_xiaomei", "@char_main_jiangye", "@scene_baoanshi", "@ambient_rain_indoor"],
+    "seedance_input_mode": "image_to_video_first_frame",
+    "first_frame_ref": "@last_frame_of_shot07"
+  }
+}
+```
+
+每个 shot 顶层加 `seedance_call_mode` 字段（从 `handoff.seedance_input_mode` 提升上来，方便下游 router 直接读）：
+
+```json
+{
+  "seedance_call_mode": "image_to_video_first_frame"
+}
+```
+
+### 校验规则
+
+- **第 1 个 shot 可以没有 handoff**；从第 2 个 shot 起 handoff 缺失 flag「shot N 缺衔接块，跨镜一致性回退到 hard_cut + text_to_video」，但仍按默认值落到结构化输出（`transition_type=hard_cut, seedance_input_mode=text_to_video`），不擅自补写 5W 内容。
+- **`transition_type` 必须是 8 个枚举值之一**：`hard_cut / match_on_action / eyeline_match / sound_bridge / j_cut / l_cut / graphic_match / concept_cut`；非枚举值 flag「衔接类型 X 非标准」并回退到 `hard_cut`。
+- **`seedance_input_mode` 必须是 6 个枚举值之一**：`text_to_video / image_to_video_first_frame / first_last_frame / ref_pack / nine_panel_grid_i2v / video_extend`；非枚举值 flag 并回退 `text_to_video`。
+- **`seedance_input_mode != text_to_video` 时 `first_frame_ref` 必填**；缺失 flag「shot N 模式 X 缺首帧参考槽位 ID」。
+- **`repeated_tokens` 至少含 1 个 token**（跨场景硬切允许丢空间但角色 token 必留）。空数组 flag「shot N 与 shot N-1 共享 0 token，可能跳剧」。
+- **`transition_type=concept_cut` 全片计数**：超过 2 处 flag「全片 concept_cut N 处，叙事可能散架」。
+- **`first_frame_ref` 引用的槽位** 必须能在全局 `reference_pack[]` 或 `@last_frame_of_shotNN`（指向已存在的 shot 编号）里解析；解析不到 flag「shot N 首帧参考 X 解析失败」。
+
+### Seedance 调用路由建议（仅写说明，不强制行为）
+
+下游 presenter 按 `seedance_call_mode` 选择 API 调用形式：
+
+| 模式 | API 调用 | 必需输入 | 用途 |
+|---|---|---|---|
+| `text_to_video` | T2V | prompt only | 第 1 镜 / 风格化空镜 / 接受较弱一致性 |
+| `image_to_video_first_frame` | I2V (first frame) | 1 张图 + prompt | 同场景同主体 + match_on_action（首帧用上一镜末帧） |
+| `first_last_frame` | I2V (first + last frame) | 2 张图 + prompt | **明确 A→B 状态过渡**（化身 / reveal / 出态→入态过渡） |
+| `ref_pack` | T2V/I2V + reference pack | prompt + 1-9 image + 1-3 video + 1-3 audio | 多角色 / 多场景 / 跨场景默认 hard cut；身份锚靠 `@char_main_*` turnaround sheet |
+| `nine_panel_grid_i2v` | I2V (grid as input) | 1 张 9 宫格 storyboard 图 + motion prompt | **段内分镜压缩**：把 9 个紧凑节拍压成 1 段 15s 连续电影镜头（替代 6-8 次小调用）。**不是**跨段身份锚 |
+| `video_extend` | Video extend | 上一段 video + prompt | **同剧情同场景延长 >15s**（模型分析整段轨迹，比 first_last_frame 更稳） |
+
+**关键区分**：
+
+- `nine_panel_grid_i2v` 的 `first_frame_ref` 应该是 `@grid_<段名>` 这类**段级 grid** 槽位，不是 `@char_main_*` turnaround sheet。前者是单段分镜压缩，后者是跨段身份锚。
+- `image_to_video_first_frame` 与 `video_extend` 在同场景续接时优先后者（轨迹分析更全面）；只有"明确 keyframe → keyframe"过渡才用 `first_last_frame`。
+
+shot_split 不替下游做这个调用，只把 `seedance_call_mode` 和 `handoff` 透传。
+
 ## 空间与连续性整理
 
 - 已确认分镜怎么写，就按它的空间逻辑整理；不要重新设计机位。
@@ -178,6 +289,7 @@ description: flow.story_to_video.shot_split 的补充提示词；用于把已确
 
 - `source` 反映来源：原文逐字保留用 `verbatim`，为可说话容量轻微改写用 `adapted`，为连接镜头新增的短句用 `new_bridge`。
 - **lip-sync 台词（kind=dialogue 且带引号）不允许 `adapted` 改写**，只能 `verbatim` 或 `new_bridge`，且 `new_bridge` 必须满足 lip-sync 三件套（引号 + 情绪前缀 + ≤12 个汉字 / 8 个英文单词）。需要改写时改成在质量说明里 flag「台词 X 容量超载，建议回分镜咨询缩短」，而不是默改。
+- **任何 `source=new_bridge` 的输出必须在质量说明里强制 flag**「shot N 新增桥句台词「...」（new_bridge），未经用户确认；如需保留请在 consult.storyboard 显式确认」。new_bridge 是低频路径，不能默挂；上游 `consult.storyboard` 已经写过的台词永远走 `verbatim`。
 - `voiceover / inner_monologue / offscreen` 类型可以 `adapted`，但不能吞掉核心修辞。
 
 ### 容量
@@ -233,14 +345,30 @@ shot_split 必须把这三个子层分别映射到结构化字段：
 
 | 来源字段 | 落到结构化输出的字段 | 必须性 |
 |---|---|---|
-| `负向约束` | `negative_constraints`（string 数组，按 `/` 或逗号拆条） | **必须保留**，下游 Seedance prompt 会拼到 negative slot |
+| `负向约束` | `negative_constraints`（string 数组，按 `/` 或逗号拆条，全角 `｜` 与半角 `\|` 都识别） | **必须保留**，下游 Seedance prompt 会拼到 negative slot |
 | `因果/物理` | `meta.causal_physics`（string，原样） | 高物理交互镜头**必须保留**，下游 Seedance 用作 WHY 信号 |
 | `情绪强度` | `meta.emotion_intensity`（string，原样） | 保留即可，无下游强消费 |
 | `暗线/铺垫` | `meta.subtext`（string，原样） | 保留即可，给后续修订阶段参考 |
 | `视线与空间` 里的 SDV 矢量 | `motion_vector`（string，原样） | 高风险位移场**必须保留** |
 | `场景/氛围` 里的明暗交界线 + 冷暖色温分布 | `lighting_geometry`（string，原样） | 命名光场**必须保留** |
+| `参考池引用` | `reference_refs[]`（数组，每项 `{slot, type, purpose}`） | 项目里有稳定资产的角色/场景**必须保留**，下游 Seedance 路由到 ref 槽 |
+| `衔接` 整块 | `handoff`（object，详见 §跨 shot 衔接字段） | 第二镜起**必须保留**，缺失 flag 不补 |
+| `衔接` 里 `Seedance 输入模式` | `seedance_call_mode`（string，顶层字段，方便下游 router 直接读） | **必须保留** |
 
 **禁止改写、合并、压缩**这些字段。如果原文这些字段为空，结构化输出对应字段也留空，不要硬编出值。
+
+### `fast` 关键词 flag 作用域（限定）
+
+shot_split 检查 `fast` 关键词时**只在以下两个字段范围里 flag**：
+- `景别/角度/运镜` 字段全文
+- `动作与调度` 字段里描述运镜的部分（`相机 fast push-in`、`fast tracking shot` 等）
+
+**不在以下范围 flag**（这些是合法的剧情/生理描述，不影响 Seedance 运镜）：
+- 角色描述（`他比上次跑得更快`、`心跳加快`）
+- 旁白 / 台词内容（`"快进来"` 这种 lip-sync 台词）
+- 因果/物理（`fast-flowing water` 描述水流物理属性）
+
+flag 时给具体出现位置，不要全文级 flag。
 
 ## 质量标准
 
@@ -249,11 +377,14 @@ shot_split 必须把这三个子层分别映射到结构化字段：
 - 每个 shot 都有清楚的画面动作、叙事目标、直接结果和下一镜承接点。
 - 相邻 shots 没有人物突然换位置、视线突然反向、台词突然开始、情绪突然跳变或空间突然断裂。
 - 台词/旁白容量与时长倾向匹配；过载时有明确标注或合理拆分。
-- lip-sync 台词（kind=dialogue + 引号）：引号保留原样、tone 字段已填、单条 ≤ 12 个汉字 / 8 英文单词、source 不是 `adapted`。
+- lip-sync 台词（kind=dialogue + 引号）：引号保留原样、tone 字段已填、单条 ≤ 12 个汉字 / 8 英文单词、source 不是 `adapted`；`source=new_bridge` 已强 flag。
 - 资产引用真实存在，不伪造项目内不存在的稳定名称；缺项目资产的角色用顶部 anchor_descriptor 占位并已 flag。
-- 跨镜手册：顶部 `角色锚点` 的所有角色都被某个 shot 引用过；`连续性账本` 已存到 `continuity_ledger` 全局元数据，且没有 shot 与账本冲突。
+- 跨镜手册三段：顶部 `角色锚点` 的所有角色都被某个 shot 引用过；`连续性账本` 已存到 `continuity_ledger` 全局元数据（含 prop_state_machine / lighting_matrix / sound_bridge_plan 三新字段），且没有 shot 与账本冲突；`视觉参考池` 已存到 `reference_pack[]` 全局元数据，槽位上限 9 image / 3 video / 3 audio 已校验。
+- 输入是单行紧凑 manifest 格式（`角色锚点：A=...;B=...` / `参考池：@xxx=...`），已**提示切姊妹 skill** 而不是硬解析。
 - 对话块和时间戳硬剪辑：对话块按台词序列 + 反应锚点拆 sub-shot，时间戳按时间戳数拆 sub-shot；sub-shot 都带 `dialogue_block_origin` / `multi_shot_origin` 标记；时间戳总长 ≤ 15s。
-- 透传字段：`negative_constraints` / `motion_vector` / `lighting_geometry` / `meta.causal_physics` / `meta.emotion_intensity` / `meta.subtext` 全部按原文落到结构化输出，没改写、没合并、没压缩。
+- **跨 shot 衔接 (handoff)**：第二镜起每个 shot 都有 `handoff` 块；`transition_type` / `seedance_input_mode` 都是合法枚举值；`repeated_tokens` 至少 1 个；非 `text_to_video` 模式的 `first_frame_ref` 已填且能解析；`concept_cut` 全片 ≤ 2 处；`seedance_call_mode` 顶层字段已从 handoff 提升。
+- 透传字段：`negative_constraints` / `motion_vector` / `lighting_geometry` / `meta.causal_physics` / `meta.emotion_intensity` / `meta.subtext` / `reference_refs[]` / `handoff` / `seedance_call_mode` 全部按原文落到结构化输出，没改写、没合并、没压缩。
+- `fast` flag 作用域已限定在 `景别/角度/运镜` 字段和 `动作与调度` 字段的运镜描述部分；剧情/生理/台词里的 fast 用法没有误 flag。
 - 声音：SFX / ambient / silence 三子层分别落到 `audio.sfx[]` / `audio.ambient` / `audio.silence[]`，没合并成单字段。
 - 输出能被后续分镜图、视频路径和提示词包阶段继续消费，不需要再猜原分镜意思。
 
@@ -263,5 +394,8 @@ shot_split 必须把这三个子层分别映射到结构化字段：
 - 原文空间关系不清时，保持简单：建立镜头 -> 中景动作 -> 特写证据或反应 -> 结果落点。
 - 原文台词太长而时长不足时，拆成连续旁白或对话 shots，不吞掉关键句。
 - 资产匹配不确定时留空，不要为了完整性编造资产名。
-- 顶部跨镜手册缺失时（角色锚点 / 连续性账本任一缺失），按现行守恒模式继续处理，但在质量说明里 flag「缺跨镜手册，跨镜一致性可能下降，建议回 consult.storyboard 补」。
+- 顶部跨镜手册缺失时（角色锚点 / 连续性账本 / 视觉参考池任一缺失），按现行守恒模式继续处理，但在质量说明里 flag「缺跨镜手册 X，跨镜一致性可能下降，建议回 consult.storyboard 补」。三段都缺时同时 flag，并提示「这是 Tier 1 ≤3 shot 短片段以外的场景必装项」。
+- 输入顶部出现单行 `角色锚点：A=...;B=...` 或单行 `参考池：@xxx=...;@xxx=...` 紧凑格式 manifest 时，**立即停止**结构化，提示「输入是紧凑格式 manifest，应使用姊妹 skill `lumina-flow-shot-split-scene-as-shot` 处理」。
 - 时间戳总长 > 15s、对话块"覆盖期望"语义不清、单镜两个主运镜、lip-sync 台词超过 12 字等情况，**不擅自修复**，按原文结构化输出 + 在质量说明里 flag，让用户回 consult.storyboard 决定怎么改。
+- 衔接块缺失（第二镜起）/ 衔接类型非枚举值 / Seedance 输入模式非枚举值 / 非 text_to_video 模式缺首帧参考 / 重复 token 为空 / first_frame_ref 解析失败时，**不擅自修复**，按默认值（`hard_cut + text_to_video`）落结构化输出 + 在质量说明里 flag，让用户回 consult.storyboard 决定。
+- 长叙事 ≥10 shot 但顶部参考池没有 `@char_main_*` + `@scene_*` 两个最低槽位时，按 Tier 1 现行守恒模式继续，flag「10+ shot 长叙事缺 Tier 3 参考池基线，跨镜一致性预期低于 60%，强烈建议回 consult.storyboard 补 9-panel grid 计划与参考池槽位」。

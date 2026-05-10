@@ -77,9 +77,53 @@ description: consult.storyboard 的补充提示词；用于把剧本、叙事或
 活跃道具：门禁卡（姜夜口袋）, 监控屏（墙面右上）
 光线基线：保安室冷白荧光 4000K + 玻璃外门头灯红 3200K（频闪 1.5Hz）
 情绪轨迹：小美 试探→警觉→恐惧；姜夜 慵懒→压制→冷漠
+道具状态机：门禁卡 完整(shot1) → 被姜夜手指摩挲(shot4) → 拍在桌面(shot7) → 滑落地面(shot12)
+光线连续矩阵：shot1-6 4000K 冷白 + 红 3200K 频闪；shot7 加 monitor 6500K 蓝(信息揭示)；shot8-12 红频闪频率 1.5Hz→3Hz(压力升级)
+声音桥接计划：shot3→4 J-cut 门禁咔哒提前 0.4s；shot7→8 L-cut 监控蜂鸣延伸 1.2s 进 shot8；shot11→12 sound_bridge 雨声渐强覆盖切场
 ```
 
-锚点字符串约定：每个镜头里出现该角色时，台词/旁白或画面叙事首句直接复用锚点中已有外观词（"小美在门外…"），不要在镜头里再展开新外观描述。下游 AI 视频模型靠 token-level 重复实现跨镜一致性，重复就是协议。
+## 视觉参考池 (Universal Reference Pack)
+
+Seedance 2.0 一次调用最多接 12 个参考资产:**9 image + 3 video + 3 audio**(video 和 audio 总长各自 ≤15s),通过 `@slot_name` 在 prompt 里 anchor。这是跨 shot 一致性的最强协议,**只要全片 ≥4 个 shot 就应该建参考池**;10+ shot 长叙事必建。
+
+参考池放在分镜文本顶部「跨镜手册」之后,只写一次。槽位命名采用稳定的 `@<purpose>_<name>` 形式,让下游 flow 层和 Seedance API 都能机器识别:
+
+```text
+## 视觉参考池
+
+图像槽 (≤9):
+  @char_main_xiaomei      小美 turnaround sheet(正面+3/4+侧)  跨段身份锚,几乎每镜都引
+  @char_outfit_xiaomei    小美粉色泡泡袖针织衫单品              换装临界镜头才切
+  @char_main_jiangye      姜夜 turnaround sheet                跨段身份锚
+  @char_face_jiangye      姜夜面部特写(用于强 lip-sync)         对话戏锁脸,脸占 ≥40% 才用
+  @scene_baoanshi         保安室主图(白天版,锁几何)             建立空间
+  @scene_baoanshi_night   保安室夜版(锁夜间灯光基调)             夜戏切
+  @lighting_baoanshi      保安室命名光场参考(冷白+红频闪)         锁灯光
+  @prop_keycard           门禁卡特写                           关键道具状态机
+  @style_palette          整片调色参考(冷蓝+霓虹粉)              风格统一
+  @grid_combat_climax     战斗高潮 9 宫格分镜图(段内分镜压缩用)  仅用于 nine_panel_grid_i2v 模式,
+                                                              一张 grid 对应一个 ≤15s 段
+
+视频槽 (≤3, 总长 ≤15s):
+  @motion_pushin          标准 push-in 节奏参考(2s)        高频运镜
+  @transition_baoanshi    保安室门口推开门 transition (3s)   场景切
+
+音频槽 (≤3, 总长 ≤15s):
+  @ambient_rain_indoor    室内雨声 ambient (5s loop)        全片底声
+  @bgm_tension            压力升级 BGM (8s)                关键转折用
+  @voice_jiangye          姜夜音色参考 (1.5s)               锁角色音色
+```
+
+引用规则:
+
+- 镜头里只要出现某角色,**该镜头的"画面叙事"或"动作与调度"首句必须显式引用对应槽位**,例如`小美(@char_main_xiaomei)在门外踟蹰`。下游 flow 层会把这些 `@slot` 提取到 `shot.reference_refs[]`,Seedance API 调用时拼接成 `Use @char_main_xiaomei as the protagonist`。
+- 一个镜头可以引用多个槽位(角色 + 场景 + 灯光 + 道具),但**单个 shot 实际传给 Seedance 的 image 资产数量受总池子 9 张上限制约**——长叙事时主线 shot 最多带 4-6 张,空镜带 1-2 张就够。
+- `@char_main_*` 是最高优先级槽位,几乎每个出该角色的 shot 都引;`@char_outfit_*` 只在换装临界 shot 引;`@char_face_*` 只在强 lip-sync 特写镜头引(脸占画面 ≥40%)。
+- 视频槽 `@motion_*` 在需要锁定特定运镜节奏时引,文本描述运镜不够稳时优先;音频槽 `@ambient_*` / `@bgm_*` 在需要跨多 shot 维持声音 ambient 一致时引。
+- 项目里**没有现成参考资产**时,留空槽位说明,在用户说明里 flag「需补 @xxx 资产,否则该角色一致性回退到纯 token 模式」。
+- 参考池**不是创作字段**,改动账本和参考池之外不主动新增镜头描述;参考池只在用户绑定 / 解绑资产时同步更新。
+
+锚点字符串约定:每个镜头里出现该角色时,台词/旁白或画面叙事首句直接复用锚点中已有外观词("小美在门外…"),不要在镜头里再展开新外观描述。下游 AI 视频模型靠 token-level 重复 + 视觉参考池**双重协议**实现跨镜一致性,**重复就是协议,参考池就是锁**。
 
 每个关键镜头尽量包含这些栏目，简单镜头可以合并：
 
@@ -90,7 +134,7 @@ description: consult.storyboard 的补充提示词；用于把剧本、叙事或
 情绪强度：
 场景/氛围：
 暗线/铺垫：
-画面叙事：
+画面叙事：（首句显式引用 @char_main_xxx / @scene_xxx 等参考池槽位）
 动作与调度：
 景别/角度/运镜：（景别 + 主运镜 + 节奏副词）
 视线与空间：
@@ -100,6 +144,14 @@ description: consult.storyboard 的补充提示词；用于把剧本、叙事或
   环境声：
   沉默/余韵：
 因果/物理：（可选，仅高物理交互镜头填，例如撞击、跌落、液体、布料、火焰）
+参考池引用：（@char_main_xxx + @scene_xxx + @lighting_xxx + @prop_xxx，按需选；下游会路由到 Seedance ref 槽）
+衔接：（与上一镜的连接，5W 一句话写完：从哪/谁/动作完成度/声音/视线落点）
+  出帧状态：（上一镜末帧人物位置/视线/手部姿态/动作完成度/声音残响）
+  入帧状态：（本镜首帧上述要素）
+  衔接类型：（hard_cut / match_on_action / eyeline_match / sound_bridge / j_cut / l_cut / graphic_match / concept_cut 选一）
+  重复 token：（与上一镜共享的角色/空间/声音 token，至少 1 个，跨场景硬切允许放弃空间但角色必留 1）
+  Seedance 输入模式：（text_to_video / image_to_video_first_frame / first_last_frame / ref_pack / nine_panel_grid_i2v / video_extend 选一）
+  首帧参考：（如果输入模式不是 text_to_video，写 @last_frame_of_shotNN 或 @char_main_xxx 之类的槽位 ID）
 负向约束：（短行，例如"无字幕条 / 无后景观众 / 无穿模 / 不出现品牌 logo"）
 剪辑承接：
 ```
@@ -112,6 +164,8 @@ description: consult.storyboard 的补充提示词；用于把剧本、叙事或
 - "声音"按子层分别写。下游 presenter 把它分别路由到 SFX、ambient 通道 + 静音掩码；对白单独走"台词/lip-sync"字段，不要重复写到这里。
 - "因果/物理"只在物理重要时填（撞、跌、洒、燃、流），告诉模型 WHY 不只是 WHAT。
 - "负向约束"留空也合法，但有边界条件就要写（防字幕条、防后景人、防穿模、防 logo）。
+- "参考池引用"**强烈建议**任何出现主线角色/主场景的 shot 都填。引用槽位必须先在顶部「视觉参考池」里声明,**不要在 shot 里引用没声明过的槽位**。一个 shot 引用槽位数量建议 ≤6(超过容易让 Seedance 注意力分散)。
+- "衔接"块**第一镜可以省略**（没有上一镜可衔接），从第二镜起**必填**。这是 10+ shot 长叙事不漂的关键字段；缺这一块下游 flow 层会自动 flag 但不补写。
 
 不要把多个空间、多个剧情目标或完整场景变化塞进一个镜头块。一个镜头可以有内部动作链，但必须保持同一空间、同一主体关系和同一叙事目标。
 
@@ -134,6 +188,177 @@ description: consult.storyboard 的补充提示词；用于把剧本、叙事或
 - "剪辑承接"栏写清切点落在哪个时间戳块的尾帧，让下游剪辑师知道该镜头的"出门"在哪里。
 
 这一步不是把分镜变成程序结构，而是让导演在分镜咨询阶段预演视频模型的 attention 分配，保留自然镜头语言。
+
+## 跨镜衔接 (Continuity Spine)
+
+跨镜衔接是 10+ shot 长叙事的**最高杠杆字段**。Seedance 2.0 单次生成 ≤15s，长叙事必然多次调用，**每两次调用之间靠"衔接"字段把视觉/听觉/动作/视线连起来**，否则 shot 与 shot 之间会出现脸飘、服装跳、空间错、动作断、声音裂——观众一眼看出是 AI 拼接，而不是连续叙事。
+
+### 衔接 5W：每两个相邻 shot 必须能回答
+
+1. **Where**：上一镜末帧空间锚点 vs 本镜首帧空间锚点。同场景就承继，跨场景必须给衔接桥（声音/动作/视线/形状/概念，至少一个）。
+2. **Who**：上一镜画面焦点是谁，本镜首帧焦点是谁。如果焦点切换（A 切到 B），上一镜末段必须有视线/动作/声音指向 B。
+3. **Action**：上一镜末帧动作是否完成？未完成时本镜必须承接（match-on-action），否则画面会"重启"。
+4. **Sound**：上一镜末段声音是否延伸进本镜（J-cut/L-cut/sound bridge）？延伸的声音类型必须在两个 shot 的 audio 字段里同时出现。
+5. **Attention**：观众视线在上一镜末帧落在哪个屏幕位置？本镜首帧应让主体出现在邻近位置（eye-trace 守恒）。屏幕方向跳跃 >40% 画面宽度时观众会迷失。
+
+### 衔接类型枚举（8 种）
+
+| 类型 | 定义 | 何时用 | 下游 Seedance 输入模式建议 |
+|---|---|---|---|
+| `hard_cut` | 直接切换 | 默认；场景大边界、节奏需要时 | text_to_video 或 ref_pack |
+| `match_on_action` | 上一镜动作未完成，下一镜从另一角度续上 | 增强连续感；推门、转身、伸手等 | image_to_video_first_frame（用上一镜 last_frame） |
+| `eyeline_match` | 上一镜角色看 X，下一镜直接给 X | 揭示、反应、悬念落点 | text_to_video + 强 token 重复 |
+| `sound_bridge` | 上一镜末段环境声/SFX 延伸到下一镜画面 | 牵引情绪；同场景内感官连续 | ref_pack + @ambient_xxx 音频槽 |
+| `j_cut` | 下一镜声音提前进入上一镜末段（典型：电话响起、敲门声、脚步） | 悬念、牵引、信息提前 | ref_pack + @ambient_xxx |
+| `l_cut` | 上一镜声音延续覆盖下一镜首段（典型：余韵、呼吸、雨声） | 余韵、关系破裂后孤立感 | ref_pack + @ambient_xxx |
+| `graphic_match` | 上一镜末帧形状/构图与下一镜首帧呼应（圆形→圆形、轮廓→轮廓） | 时空跳跃、主题升级、回忆切入 | first_last_frame 模式 |
+| `concept_cut` | 主题/反讽/对比剪辑（无视觉/听觉直接锚） | 文学型；不可滥用 | text_to_video + 描述性指令 |
+
+### Token 重复协议（最低门槛）
+
+每两个相邻 shot 必须共享至少 **1 个** token：
+
+- **角色 token**：同名 `@char_main_xxx` 引用 / 同名锚点字符串。跨场景硬切允许丢空间但**角色必留 1**，否则视为"跳剧"，质量说明里 flag。
+- **空间 token**：同名 `@scene_xxx` 引用 / 同名空间锚点（"保安室门口"）。同场景必留。
+- **声音 token**：相同 `@ambient_xxx` 引用 / 相同 SFX 主题。J-cut/L-cut/sound_bridge 必留。
+
+跨场景、跨时间、跨人物的"概念剪辑"是唯一允许 0 token 共享的情况，但**全片不超过 2 处**，否则叙事散架。
+
+### 写法示例
+
+```text
+### 镜头 08：小美进门后被掐住咽喉（约 4 秒）
+
+衔接：
+  出帧状态：shot07 末帧——小美推门走进保安室，身体前倾，笑容甜，左手仍握门把(画面中右下)，姜夜画面左中坐姿不变；声音：门锁咔哒已落、雨声底层
+  入帧状态：shot08 首帧——门把仍被小美左手握住(画面右下)，门已开 80°，姜夜身体前倾起身的瞬间(画面左中)
+  衔接类型：match_on_action
+  重复 token：@char_main_xiaomei + @char_main_jiangye + @scene_baoanshi + @ambient_rain_indoor
+  Seedance 输入模式：image_to_video_first_frame
+  首帧参考：@last_frame_of_shot07
+```
+
+### 反模式（不要写）
+
+- 衔接里只写"接 shot07"——这等于没写。下游解析不出 5W。
+- 衔接类型选 `hard_cut` 但实际是同场景同人物——浪费了 match_on_action 的连续性收益。
+- `重复 token` 留空——直接导致跨镜飘。
+- `Seedance 输入模式` 永远写 `text_to_video`——长叙事必飘。
+
+## 长叙事多 shot 链路策略
+
+10+ shot 一次性生成必须按 **3 层链路策略** 选择 Seedance 调用模式，不能把所有 shot 都走 `text_to_video`：
+
+### Tier 1：≤3 shot 短片段
+
+- 纯 `text_to_video`，每 shot prompt 里复用角色锚点字符串。
+- 不强制建参考池（建议建 `@char_main_*` 一个槽就够）。
+- 跨镜一致性靠 token 重复 + 命名光场 + 空间锚点。
+- 适合：单一片段、风格化空镜组、试拍。
+
+### Tier 2：4-10 shot 标准短剧
+
+- **必须建 Reference Pack**：至少 `@char_main_<主角>` + `@scene_<主场景>` 两个槽。
+- 每个出现主角/主场景的 shot 显式 `参考池引用：@char_main_xxx + @scene_xxx`。
+- 主线动作转折用 `image_to_video_first_frame`（用上一镜末帧）；跨场景边界用 `first_last_frame`（首帧 = 当前场景入口、末帧 = 下一场景出口的预览）。
+- 跨场景必放 `sound_bridge` 或 `j_cut`，至少一个。
+- 适合：抖音/快手 60-90s 短剧、短视频系列单集。
+
+### Tier 3：10+ shot 长叙事 / 多集短剧（4 层模型）
+
+10+ shot 长叙事的本质是**"批量生产 + 跨段衔接 + 后期补救"**，单镜 prompt 工程的边际收益在 30 秒以后急剧下降（行业公认的"30 秒一致性墙"）。靠"每 N 镜锚定"或"全局共享一张图"都顶不住积累漂移；正确的方式是把策略分四层：
+
+#### Layer A：资产前置（项目级，一次性准备）
+
+这是真正的"视觉 DNA"。在分镜咨询前或第一次分镜时，要求用户/外部图像模型（GPT Image 2 / Nano Banana / 同等）准备：
+
+- **每个主角**：一张 turnaround sheet（3-4 个角度 / 同光线 / 同服装），落到 `@char_main_<名>`。Identity Anchoring 的核心载体。
+- **每套关键服装**：单品平铺图，落到 `@char_outfit_<名>`。换装临界镜头才用。
+- **每个主场景**：日 / 夜两版，落到 `@scene_<名>_day` / `@scene_<名>_night`。
+- **关键道具**：状态机第一个状态的特写，落到 `@prop_<名>`。
+- **整片色板**：一张色彩参考，落到 `@style_palette`。
+- 主角出场 ≥20 个 shot 的项目，建议补一步 **LoRA fine-tune**（项目能力允许时）；turnaround + LoRA 一起上是行业最强的身份锚。
+
+**这一层不是 9-panel grid。**Turnaround sheet 是身份锚（reusable across many shots），9-panel grid 是段内分镜压缩（one grid → one 15s shot），两者目的不同，不要混用。
+
+#### Layer B：段内策略（每 ≤15s 一段，按内容选模式）
+
+每个段（≤15s 的一次 Seedance 调用）按它的内容形态选择模式：
+
+| 段内容形态 | 推荐模式 | 输入 |
+|---|---|---|
+| **9 个紧凑节拍压成 1 个连续镜头**（战斗高潮、化身蒙太奇、特征展示、快剪） | `nine_panel_grid_i2v` | 1 张 9 宫格 storyboard 图 + motion prompt |
+| **1-2 个持续动作 + 对白**（标准对白场、单人独白、慢节奏） | `ref_pack` | prompt + 多个 `@char_main_*` / `@scene_*` 槽位 |
+| **明确 A→B 状态过渡**（化妆变身、reveal、AB 转换、回忆切入） | `first_last_frame` | 2 张图 + prompt |
+| **同剧情同场景延长 >15s** | `video_extend` | 上一段 video + prompt |
+| **第 1 个段或风格化空镜** | `text_to_video` | prompt only |
+
+`nine_panel_grid_i2v` 的真正用法是：**把 9 个分镜节拍画在一张 3×3 图上，喂给 Seedance，让它"展开"成一段 15s 的连续电影镜头**——这是"用 1 次调用替代 6-8 次小调用"的成本与一致性优势，**不是**"用同一张 grid 锁多个独立 shot 的身份"（后者是误用，业界没有支持这种用法的实测）。
+
+#### Layer C：段间衔接（跨段一致性靠衔接类型 + 模式组合）
+
+| 段间关系 | 推荐模式 | 衔接类型 |
+|---|---|---|
+| 同场景同主体 + 动作未完成 | `image_to_video_first_frame`（用上一段 last frame） | `match_on_action` |
+| 同场景同主体 + 动作完成的反应 | `text_to_video` + 强 token 重复 | `eyeline_match` |
+| 跨场景但需要明确出态→入态 | `first_last_frame` | `graphic_match` |
+| 跨场景默认 hard cut | `ref_pack`（共享 `@char_*` + `@scene_*` token） | `hard_cut` |
+| 同剧情时间延长 | `video_extend`（分析整段轨迹，不只末帧） | `match_on_action` |
+| 跨场景但需要听觉牵引 | `ref_pack` + `@ambient_*` 音频槽 | `sound_bridge` / `j_cut` / `l_cut` |
+
+**`video_extend` 与 `first_last_frame` 的选用**：同剧情同场景的续接首选 `video_extend`，因为它分析"整段视频的运动 / 灯光 / 构图轨迹"而不只是末帧；只有出态和入态都是明确"keyframe"（化身、reveal、过渡）时才用 `first_last_frame`。
+
+#### Layer D：产线协议（替代失效的"每 5 shot 锚定核销"）
+
+这是行业实测最有效的 drift mitigation 方法，**单镜 prompt 工程在 30 秒后救不回来**，必须靠产线协议：
+
+1. **按相似度分批生成**（而不是按剧情顺序生成）：
+   - 所有 close-up 一批
+   - 所有 wide shot 一批
+   - 同场景所有 shot 一批
+   - 同光线条件所有 shot 一批
+   - 原理：相似 prompt + 相同 reference 在 Seedance 上比交替 prompt 更稳。
+
+2. **每个 shot 生成 2-3 个变体，选 1 留 1**：行业 usable rate 50-70%，意味着 100 个 shot 的项目要预算 200-300 次 Seedance 调用。consult.storyboard 在分镜文本里**不需要**写 buffer，但要在用户说明里告知"建议每镜 2-3 次出图"。
+
+3. **生成完后做一次性 consistency review**：标记 15-25% 漂移最严重的 shot 重出，**不在生成中插入"锚定核销 shot"**（那种做法既贵又不稳定）。
+
+4. **后期统一调色 (color grading)**：作为最后一层补救，统一所有 shot 的色温 / 饱和度 / 对比度，掩盖残余 drift。这是行业标准做法，不是"作弊"。
+
+5. **跨段一致性的"硬地板"**：靠 turnaround sheet（Layer A）+ ref pack 引用（Layer B）+ 段间衔接类型（Layer C）三重防线。**不要**指望靠"每 N 镜插入一个复位 shot"——业界没有人这么做，因为那个复位 shot 本身也会 drift，而且打断剧情节奏。
+
+### 模式选择决策树（写衔接字段时按这个决策）
+
+```
+本 shot 是第 1 个 shot 吗？
+├─ Yes：
+│   ├─ 内容是"9 个紧凑节拍压成 1 个连续镜头"？
+│   │    └─ nine_panel_grid_i2v（grid 作为单段分镜输入）
+│   ├─ 项目里有 ref pack 配齐？
+│   │    └─ ref_pack
+│   └─ 否则：text_to_video（接受较弱一致性）
+└─ No：
+    ├─ 同场景 + 同主体 + 动作未完成？
+    │   └─ image_to_video_first_frame（首帧 = @last_frame_of_shotNN）
+    ├─ 同剧情同场景延长 >15s？
+    │   └─ video_extend（首帧 = @last_video_of_shotNN，模型分析整段轨迹）
+    ├─ 跨场景但需要明确出态→入态（化身/reveal/过渡）？
+    │   └─ first_last_frame（首帧 + 末帧 2 张关键帧）
+    ├─ 跨场景 + sound bridge / J-cut / L-cut？
+    │   └─ ref_pack + @ambient_xxx 音频槽
+    ├─ 内容是"9 个紧凑节拍压成 1 个连续镜头"？
+    │   └─ nine_panel_grid_i2v
+    ├─ 多角色 + 多场景 + ref pack 已配齐？
+    │   └─ ref_pack
+    └─ 默认：text_to_video（必填强 token 重复 + 命名光场）
+```
+
+### 反模式（不要这样做）
+
+- ❌ **把同一张 9-panel grid 反复用作多个独立 shot 的身份锚**：grid 是段内分镜压缩工具，不是跨段 DNA。要做跨段身份锚用 turnaround sheet。
+- ❌ **每 5 shot 插入一个"锚定核销" first_last_frame 复位 shot**：行业不这么做，复位 shot 本身会 drift 且打断剧情。换 batch-by-similarity + 后期调色。
+- ❌ **认为"30 秒以上的连续叙事可以靠单镜 prompt 工程做出来"**：30 秒后必然撞一致性墙，必须靠 Layer A 资产 + Layer D 产线协议补救。
+- ❌ **只用 text_to_video 跑长叙事**：每镜独立采样，drift 会指数级累积。≥4 shot 必上 ref_pack。
 
 ## 戏剧节拍（beatRole）的镜头内分配
 
@@ -378,7 +603,18 @@ Seedance 2.0 在同一次前向里吐音视频，做音素级 lip-sync，支持 
 - **避免 fast camera + fast subject + 复杂场景三连**。Seedance 文档点名这个组合必出 artifact；如果剧情确实要这么拍，把场景压简（清空背景、只留主体 + 单一灯源）。
 - **不要写焦距、光圈、景深、焦平面、85mm/f/1.4 这种技术 jargon**。Seedance 对这类参数无响应甚至误导，要求镜头质感请改写"medium close-up，缓慢 push-in，practical 钨丝顶光"这种自然描述。
 - **真实身份不要硬指**。Seedance 禁用真实可识别人脸，写"长得像 X 明星"会被拒；用结构化角色锚点代替。
-- **单次输出 ≤15s**。多镜头时间戳总时长不能超过 15 秒，跨过就要拆成两个 Seedance 调用，并在两段之间用顶部"连续性账本"锁角色/灯光/时间线。
+- **单次输出 ≤15s**。多镜头时间戳总时长不能超过 15 秒，跨过就要拆成两个 Seedance 调用，并在两段之间用顶部"连续性账本"+「视觉参考池」+「衔接」字段三重锁住角色/灯光/时间线/动作连续性。
+- **`fast` 关键词只在运镜/剪辑层面禁用**，描述角色"心跳加快""他跑得比上次快"这类剧情/生理描述里使用是允许的；下游 shot_split 的 flag 范围限定在"景别/角度/运镜"和"动作与调度"运镜描述部分。
+- **Universal Reference 12 槽位是跨镜一致性的"金标准"**：纯文本 token 重复一致性弱于参考图。任何 shot 出现主线角色、主场景、关键道具时，**只要项目里有对应稳定资产，就必须显式 `参考池引用：@xxx`**，让下游把它路由到 Seedance 的 ref 槽。文本 token 重复是兜底协议（项目里没资产时用），不是首选。
+- **Turnaround sheet（角色三视图）≠ 9-panel grid，两者目的不同**：
+  - **Turnaround sheet** 是**跨段身份锚**：一张图含同一角色 3-4 个角度 / 同光线 / 同服装，每个出该角色的 shot 都引用它（落到 `@char_main_<名>`）。这是 Identity Anchoring 的核心载体，行业实测最稳的跨 shot 一致性手段。
+  - **9-panel grid** 是**段内分镜压缩工具**：一张 3×3 图含 9 个紧凑节拍，喂给 Seedance 的 `nine_panel_grid_i2v` 模式，让模型把它"展开"成一段 15s 连续电影镜头。**只在单段调用里用**（替代 6-8 次小调用），不是用同一张 grid 锁多段独立 shot 的身份。
+  - 把 grid 当跨段 DNA 用是常见误解，业界没有支持这种用法的实测。
+- **`video_extend` 与 `first_last_frame` 不要混**：
+  - `video_extend` 分析"上一段 video 整段的运动 / 灯光 / 构图轨迹"，适合**同剧情同场景延长 >15s**。OpusClip 实测原话："the model analyzes the existing footage comprehensively — not just the final frame, but the entire trajectory."
+  - `first_last_frame` 用 2 张关键帧定义 A→B 状态过渡，适合**化身 / reveal / 明确出态→入态的过渡场**。一般场景过渡用 `ref_pack` 即可，不需要专门给末帧。
+- **30 秒一致性墙是行业公认硬墙**：单镜 prompt 工程在 30s 以后边际收益急剧下降。10+ shot 长叙事必须靠 Layer A（资产前置）+ Layer D（batch + 变体 + 后期调色）三层防线，不要妄想靠"每 N 镜锚定"补救——业界没有人这么做，且复位 shot 本身会 drift。
+- **业界产线实测的 usable rate 是 50-70%**：意味着 100 个 shot 的项目要预算 200-300 次 Seedance 调用 + 一次性 consistency review 重出 15-25%。consult 层不写 buffer，但要在用户说明里告知预算。
 
 ## 创作边界
 
@@ -391,7 +627,10 @@ Seedance 2.0 在同一次前向里吐音视频，做音素级 lip-sync，支持 
 
 完成前逐项检查：
 
-- 跨镜手册：顶部"角色锚点""连续性账本"是否填齐；本轮修改是否同步更新这两段。
+- 跨镜手册：顶部"角色锚点""连续性账本"是否填齐；本轮修改是否同步更新这两段；连续性账本是否包含道具状态机/光线连续矩阵/声音桥接计划。
+- 视觉参考池：≥4 shot 时是否建了参考池；每个出主线角色/主场景的 shot 是否显式引用 `@xxx`；引用的槽位是否都在顶部声明过；单 shot 引用槽位 ≤6。
+- 跨镜衔接 (Spine)：第 2 镜起每镜是否有"衔接"块；5W (Where/Who/Action/Sound/Attention) 是否能从字段读出；衔接类型是否选了枚举值；重复 token 是否 ≥1（跨场景至少留 1 个角色 token）；Seedance 输入模式是否选了枚举值；非 text_to_video 模式是否填了"首帧参考"槽位 ID。
+- 长叙事策略：≤3 shot 走 Tier 1；4-10 shot 走 Tier 2 必带 ref pack；10+ shot 走 Tier 3 必有 turnaround sheet（Layer A 资产前置）+ ref pack；段内"9 节拍压 1 镜"才用 9-panel grid（Layer B 段内策略），不是全片 DNA；段间衔接按内容形态选择 video_extend / first_last_frame / ref_pack（Layer C）；用户说明里告知产线协议（Layer D：batch by similarity + 2-3 变体 / shot + 一次性 review + 后期调色）。
 - 情绪：每个镜头是否知道观众该感受什么；全段是否无长时间情绪平线。
 - 故事：每场是否有价值翻转；每个镜头删掉是否会损失信息、关系、冲突、反应或节奏。
 - 节奏：镜头时长、观看距离和运动方式是否有对比；是否有沉默和余韵。
@@ -417,3 +656,7 @@ Seedance 2.0 在同一次前向里吐音视频，做音素级 lip-sync，支持 
 - 因果不清时，优先补视觉锚点、信息差和反应镜头，而不是增加解释性台词。
 - 时长明显不够时，标注预算紧张，给压缩版结构，不硬塞全部剧情。
 - 空间关系不清时，保持简单：建立镜头、中景动作、特写证据、反应落点。
+- **项目里没有任何角色/场景资产**时，参考池只声明 schema 不填具体 `@slot`，每个 shot 仍写"参考池引用"但留空，并在用户说明里 flag「需先到项目资产页绑定 X 角色 / Y 场景，否则跨镜一致性回退到纯 token 模式（适用上限约 6 shot）」。
+- **10+ shot 长叙事但没有 turnaround sheet（角色身份锚）** 时，**优先**给出 turnaround sheet 生成需求清单（每个主角 3-4 视图同光同服），让用户去外部图像模型出图后回来续做。turnaround 是 Tier 3 的硬底线，没有它跨镜一致性必崩。
+- **段内是"9 紧凑节拍压成 1 个 15s 镜头"但没有 9-panel grid** 时，给出 grid 生成需求清单（哪 9 个节拍、3×3 布局、每格描述），让用户去外部图像模型出 grid 后回来续做。本 skill 不直接生成 grid。注意：grid 是**单段工具**，不是跨段身份锚——不要把"补 grid"当成"补全片一致性"的方案。
+- **某 shot 实在拆不出"衔接"5W**（例如剧情切到平行宇宙、梦境闪入），允许标 `衔接类型：concept_cut` 并把"重复 token"留空，但每出现一次 concept_cut 就必须在用户说明里 flag「全片 concept_cut 计数 N/2，超过 2 处需要回到剧情层重审」。
