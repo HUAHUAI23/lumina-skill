@@ -13,6 +13,22 @@ description: The 2.0 blend-image autonomous path for story_to_video; primarily u
 - The core strategy is to first create a reliable key image for the current shot, then let the video naturally animate from that image.
 - Images are responsible for locking identity, wardrobe, space, props, composition, and state; text is responsible for motion onset, camera movement, temporal shot beats, emotional landing points, and sonic character.
 
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
 ## Video Mode Rules
 
 - first_frame is the default main path: suitable when the key image for the current shot has already been blended and the video only needs to move naturally from that image.

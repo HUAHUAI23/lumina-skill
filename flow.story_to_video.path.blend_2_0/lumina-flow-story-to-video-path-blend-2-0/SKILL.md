@@ -13,6 +13,22 @@ description: story_to_video 的 2.0 溶图自治路径；首帧与参考图生�
 - 主策略是先做可靠的当前镜头主画面，再让视频从主画面自然动起来。
 - 图片负责锁定身份、服装、空间、道具、构图和状态；文本负责动作起势、镜头运动、时间分镜、情绪落点和声音气质。
 
+## 单镜头分析硬约束
+
+- 单镜头分析阶段必须同时输出 `shotSpec.description` 和 `shotSpec.narrativeGoal`，且二者都必须是非空字符串。
+- `shotSpec.description` 必须用一句落地的话说明当前镜头的具体画面内容：谁或什么在画面里、正在发生什么可见动作、镜头实际拍到了什么。
+- `shotSpec.narrativeGoal` 必须用一句落地的话说明当前镜头的明确叙事功能：它承接了什么转场、确认、揭示、情绪交接或信息兑现。
+- 不要把这两个字段改名成 `summary`、`goal`、`shotSummary`、`narrativePurpose` 等别名，也不要把两者合并成一个字段。
+- 如果信息不足，也必须基于当前镜头 `originalText` 给出简短兜底值；绝不能省略字段、返回空字符串或 `null`，也不要使用 `N/A`、`同上`、`见 summary` 之类占位词。
+
+## 单镜头分析硬约束
+
+- 单镜头分析阶段必须同时输出 `shotSpec.description` 和 `shotSpec.narrativeGoal`，且二者都必须是非空字符串。
+- `shotSpec.description` 必须用一句落地的话说明当前镜头的具体画面内容：谁或什么在画面里、正在发生什么可见动作、镜头实际拍到了什么。
+- `shotSpec.narrativeGoal` 必须用一句落地的话说明当前镜头的明确叙事功能：它承接了什么转场、确认、揭示、情绪交接或信息兑现。
+- 不要把这两个字段改名成 `summary`、`goal`、`shotSummary`、`narrativePurpose` 等别名，也不要把两者合并成一个字段。
+- 如果信息不足，也必须基于当前镜头 `originalText` 给出简短兜底值；绝不能省略字段、返回空字符串或 `null`，也不要使用 `N/A`、`同上`、`见 summary` 之类占位词。
+
 ## 视频模式规则
 
 - first_frame 是默认主路径：适合已溶出当前镜头主分镜，视频只需从这张画面自然运动。

@@ -19,6 +19,22 @@ description: story_to_video 的 2.0 场景人物参考图自治路径；以参�
 - 提示词要短、清楚、可拍，给模型自然发挥空间；过度精确会限制表演，制造噪点、僵硬动作和参考图拉扯。
 - 轻量不等于流水账；先用 `shotSynopsis` 概括整段镜头，再用少量 `microShots` 写自然镜头节拍。
 
+## 单镜头分析硬约束
+
+- 单镜头分析阶段必须同时输出 `shotSpec.description` 和 `shotSpec.narrativeGoal`，且二者都必须是非空字符串。
+- `shotSpec.description` 必须用一句落地的话说明当前镜头的具体画面内容：谁或什么在画面里、正在发生什么可见动作、镜头实际拍到了什么。
+- `shotSpec.narrativeGoal` 必须用一句落地的话说明当前镜头的明确叙事功能：它承接了什么转场、确认、揭示、情绪交接或信息兑现。
+- 不要把这两个字段改名成 `summary`、`goal`、`shotSummary`、`narrativePurpose` 等别名，也不要把两者合并成一个字段。
+- 如果信息不足，也必须基于当前镜头 `originalText` 给出简短兜底值；绝不能省略字段、返回空字符串或 `null`，也不要使用 `N/A`、`同上`、`见 summary` 之类占位词。
+
+## 单镜头分析硬约束
+
+- 单镜头分析阶段必须同时输出 `shotSpec.description` 和 `shotSpec.narrativeGoal`，且二者都必须是非空字符串。
+- `shotSpec.description` 必须用一句落地的话说明当前镜头的具体画面内容：谁或什么在画面里、正在发生什么可见动作、镜头实际拍到了什么。
+- `shotSpec.narrativeGoal` 必须用一句落地的话说明当前镜头的明确叙事功能：它承接了什么转场、确认、揭示、情绪交接或信息兑现。
+- 不要把这两个字段改名成 `summary`、`goal`、`shotSummary`、`narrativePurpose` 等别名，也不要把两者合并成一个字段。
+- 如果信息不足，也必须基于当前镜头 `originalText` 给出简短兜底值；绝不能省略字段、返回空字符串或 `null`，也不要使用 `N/A`、`同上`、`见 summary` 之类占位词。
+
 ## 输入职责模型
 
 - 文本：定义主题、动作方向、主镜头、节奏、光线、声音和情绪落点，不微管逐帧姿态。

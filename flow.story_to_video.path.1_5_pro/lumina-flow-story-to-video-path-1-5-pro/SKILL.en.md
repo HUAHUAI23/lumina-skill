@@ -12,6 +12,22 @@ description: Autonomous path for story_to_video 1.5 Pro; prioritize first-frame 
 - Reference-image-to-video is forbidden, and multiple reference images must not be used as the main video input.
 - Prioritize the first frame; use first-and-last frames only when a mandatory result must be locked within the same shot.
 
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
 ## Video Mode Rules
 
 - Prioritize first-frame-to-video.

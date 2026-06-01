@@ -19,6 +19,22 @@ description: Autonomous 2.0 scene-and-character reference-image path for story_t
 - Prompts should be short, clear, and shootable, leaving room for the model to perform naturally; excessive precision restricts performance and creates noise, stiffness, and reference-image conflict.
 - Lightweight does not mean flat narration; first use `shotSynopsis` to summarize the whole shot, then use a small number of `microShots` to write natural shot beats.
 
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
+## Single-shot analysis hard requirements
+
+- During single-shot analysis, always output both `shotSpec.description` and `shotSpec.narrativeGoal` as non-empty strings.
+- `shotSpec.description` must state the concrete visual content of the current shot in one grounded sentence: who or what is on screen, what visible action is happening, and what the shot is visually showing.
+- `shotSpec.narrativeGoal` must state the explicit storytelling function of the current shot in one grounded sentence: what transition, confirmation, reveal, emotional handoff, or payoff this shot is carrying.
+- Never rename these fields to `summary`, `goal`, `shotSummary`, `narrativePurpose`, or any other alias, and never merge them into a single field.
+- If the information is sparse, still provide a short fallback value grounded in the current shot `originalText`; never omit the field, never return an empty string or `null`, and never use placeholders such as `N/A`, `same as above`, or `see summary`.
+
 ## Input responsibility model
 
 - Text: defines theme, action direction, main shot, rhythm, lighting, sound, and emotional landing, without micromanaging frame-by-frame poses.
